@@ -1,0 +1,7 @@
+name: asil
+channels:
+  - defaults
+dependencies:
+  - python=3.11
+  - faiss-gpu
+prefix: /home/spark2/miniconda3/envs/asil
