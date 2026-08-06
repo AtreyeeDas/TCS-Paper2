@@ -1,0 +1,26 @@
+name: asil_env
+channels:
+  - pytorch
+  - pytorch-nightly
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11.8
+  - pip=24.0
+  # Core Compute & CUDA
+  - cuda-toolkit=13.0.0
+  - pytorch=2.7.0
+  - torchvision
+  - torchaudio
+  - pytorch-cuda=13.0
+  # Vector Database (WSL2/Linux specific for GPU)
+  - faiss-gpu=1.8.0
+  # Data Processing & Math
+  - numpy<2.0.0 # Pin below 2.0 to avoid TTS/Numba conflicts
+  - pandas=2.2.1
+  - scikit-learn=1.4.1.post1
+  # System utilities
+  - ffmpeg=6.1.1
+  - gcc_linux-64
+  - gxx_linux-64
