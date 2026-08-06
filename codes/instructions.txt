@@ -21,4 +21,226 @@ To fix this you could try to:
 ERROR: ResolutionImpossible: for help visit https://pip.pypa.io/en/latest/topics/dependency-resolution/#dealing-with-dependency-conflicts
 """
 MAX_JOBS=4 pip install flash-attn==2.5.8 --no-build-isolation
+"""
+(asil_env) spark2@01HW2722098:~/users/intern/Atreyee-Das/ICASSP_Work/asil$ MAX_JOBS=4 pip install flash-attn==2.5.8 --no-build-isolation
+Collecting flash-attn==2.5.8
+  Downloading flash_attn-2.5.8.tar.gz (2.5 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.5/2.5 MB 3.3 MB/s eta 0:00:00
+  Preparing metadata (setup.py) ... done
+Requirement already satisfied: torch in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from flash-attn==2.5.8) (2.14.0.dev20260801+cu130)
+Requirement already satisfied: einops in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from flash-attn==2.5.8) (0.8.2)
+Requirement already satisfied: packaging in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from flash-attn==2.5.8) (26.3)
+Collecting ninja (from flash-attn==2.5.8)
+  Using cached ninja-1.13.0-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl.metadata (5.1 kB)
+Requirement already satisfied: filelock in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from torch->flash-attn==2.5.8) (3.32.2)
+Requirement already satisfied: typing-extensions>=4.10.0 in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from torch->flash-attn==2.5.8) (4.15.0)
+Requirement already satisfied: setuptools>=77.0.3 in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from torch->flash-attn==2.5.8) (83.0.0)
+Requirement already satisfied: sympy>=1.13.3 in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from torch->flash-attn==2.5.8) (1.14.0)
+Requirement already satisfied: networkx>=2.5.1 in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from torch->flash-attn==2.5.8) (3.6.1)
+Requirement already satisfied: jinja2 in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from torch->flash-attn==2.5.8) (3.1.6)
+Requirement already satisfied: fsspec>=0.8.5 in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from torch->flash-attn==2.5.8) (2024.3.1)
+Requirement already satisfied: cuda-toolkit==13.0.3 in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch->flash-attn==2.5.8) (13.0.3.0)
+Requirement already satisfied: cuda-bindings<14,>=13.0.3 in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from torch->flash-attn==2.5.8) (13.0.3)
+Requirement already satisfied: nvidia-cudnn-cu13==9.24.0.43 in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from torch->flash-attn==2.5.8) (9.24.0.43)
+Requirement already satisfied: nvidia-cusparselt-cu13==0.8.1 in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from torch->flash-attn==2.5.8) (0.8.1)
+Requirement already satisfied: nvidia-nccl-cu13==2.30.7 in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from torch->flash-attn==2.5.8) (2.30.7)
+Requirement already satisfied: nvidia-nvshmem-cu13==3.4.5 in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from torch->flash-attn==2.5.8) (3.4.5)
+Requirement already satisfied: triton==3.8.0+git10f6be36 in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from torch->flash-attn==2.5.8) (3.8.0+git10f6be36)
+Requirement already satisfied: nvidia-cublas==13.1.1.3.* in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch->flash-attn==2.5.8) (13.1.1.3)
+Requirement already satisfied: nvidia-cuda-nvrtc==13.0.88.* in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch->flash-attn==2.5.8) (13.0.88)
+Requirement already satisfied: nvidia-cuda-runtime==13.0.96.* in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch->flash-attn==2.5.8) (13.0.96)
+Requirement already satisfied: nvidia-cufft==12.0.0.61.* in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch->flash-attn==2.5.8) (12.0.0.61)
+Requirement already satisfied: nvidia-nvjitlink<14,>=13.0.88 in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch->flash-attn==2.5.8) (13.4.46rc1)
+Requirement already satisfied: nvidia-cufile==1.15.1.6.* in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch->flash-attn==2.5.8) (1.15.1.6)
+Requirement already satisfied: nvidia-cuda-cupti==13.0.85.* in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch->flash-attn==2.5.8) (13.0.85)
+Requirement already satisfied: nvidia-curand==10.4.0.35.* in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch->flash-attn==2.5.8) (10.4.0.35)
+Requirement already satisfied: nvidia-cusolver==12.0.4.66.* in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch->flash-attn==2.5.8) (12.0.4.66)
+Requirement already satisfied: nvidia-cusparse==12.6.3.3.* in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch->flash-attn==2.5.8) (12.6.3.3)
+Requirement already satisfied: nvidia-nvtx==13.0.85.* in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch->flash-attn==2.5.8) (13.0.85)
+Requirement already satisfied: cuda-pathfinder~=1.1 in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from cuda-bindings<14,>=13.0.3->torch->flash-attn==2.5.8) (1.2.2)
+Requirement already satisfied: mpmath<1.4,>=1.1.0 in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from sympy>=1.13.3->torch->flash-attn==2.5.8) (1.3.0)
+Requirement already satisfied: MarkupSafe>=2.0 in /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages (from jinja2->torch->flash-attn==2.5.8) (3.0.2)
+Using cached ninja-1.13.0-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl (177 kB)
+Building wheels for collected packages: flash-attn
+  Building wheel for flash-attn (setup.py) ... error
+  error: subprocess-exited-with-error
+  
+  × python setup.py bdist_wheel did not run successfully.
+  │ exit code: 1
+  ╰─> [168 lines of output]
+      /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/wheel/bdist_wheel.py:4: FutureWarning: The 'wheel' package is no longer the canonical location of the 'bdist_wheel' command, and will be removed in a future release. Please update to setuptools v70.1 or later which contains an integrated version of this command.
+        warn(
+      fatal: not a git repository (or any of the parent directories): .git
+      
+      
+      torch.__version__  = 2.14.0.dev20260801+cu130
+      
+      
+      /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/setuptools/__init__.py:92: _DeprecatedInstaller: setuptools.installer and fetch_build_eggs are deprecated.
+      !!
+      
+              ********************************************************************************
+              Requirements should be satisfied by a PEP 517 installer.
+              If you are using pip, you can try `pip install --use-pep517`.
+      
+              This deprecation is overdue, please update your project and remove deprecated
+              calls to avoid build errors in the future.
+              ********************************************************************************
+      
+      !!
+        dist.fetch_build_eggs(dist.setup_requires)
+      /home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/setuptools/dist.py:765: SetuptoolsDeprecationWarning: License classifiers are deprecated.
+      !!
+      
+              ********************************************************************************
+              Please consider removing the following classifiers in favor of a SPDX license expression:
+      
+              License :: OSI Approved :: BSD License
+      
+              See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+              ********************************************************************************
+      
+      !!
+        self._finalize_license_expression()
+      running bdist_wheel
+      Guessing wheel URL:  https://github.com/Dao-AILab/flash-attention/releases/download/v2.5.8/flash_attn-2.5.8+cu122torch2.14cxx11abiTRUE-cp311-cp311-linux_aarch64.whl
+      Precompiled wheel not found. Building from source...
+      running build
+      running build_py
+      creating build/lib.linux-aarch64-cpython-311/flash_attn
+      copying flash_attn/flash_blocksparse_attention.py -> build/lib.linux-aarch64-cpython-311/flash_attn
+      copying flash_attn/flash_blocksparse_attn_interface.py -> build/lib.linux-aarch64-cpython-311/flash_attn
+      copying flash_attn/fused_softmax.py -> build/lib.linux-aarch64-cpython-311/flash_attn
+      copying flash_attn/flash_attn_triton.py -> build/lib.linux-aarch64-cpython-311/flash_attn
+      copying flash_attn/flash_attn_triton_og.py -> build/lib.linux-aarch64-cpython-311/flash_attn
+      copying flash_attn/flash_attn_interface.py -> build/lib.linux-aarch64-cpython-311/flash_attn
+      copying flash_attn/__init__.py -> build/lib.linux-aarch64-cpython-311/flash_attn
+      copying flash_attn/bert_padding.py -> build/lib.linux-aarch64-cpython-311/flash_attn
+      creating build/lib.linux-aarch64-cpython-311/flash_attn/models
+      copying flash_attn/models/gptj.py -> build/lib.linux-aarch64-cpython-311/flash_attn/models
+      copying flash_attn/models/baichuan.py -> build/lib.linux-aarch64-cpython-311/flash_attn/models
+      copying flash_attn/models/vit.py -> build/lib.linux-aarch64-cpython-311/flash_attn/models
+      copying flash_attn/models/falcon.py -> build/lib.linux-aarch64-cpython-311/flash_attn/models
+      copying flash_attn/models/bigcode.py -> build/lib.linux-aarch64-cpython-311/flash_attn/models
+      copying flash_attn/models/opt.py -> build/lib.linux-aarch64-cpython-311/flash_attn/models
+      copying flash_attn/models/gpt_neox.py -> build/lib.linux-aarch64-cpython-311/flash_attn/models
+      copying flash_attn/models/__init__.py -> build/lib.linux-aarch64-cpython-311/flash_attn/models
+      copying flash_attn/models/bert.py -> build/lib.linux-aarch64-cpython-311/flash_attn/models
+      copying flash_attn/models/llama.py -> build/lib.linux-aarch64-cpython-311/flash_attn/models
+      copying flash_attn/models/btlm.py -> build/lib.linux-aarch64-cpython-311/flash_attn/models
+      copying flash_attn/models/gpt.py -> build/lib.linux-aarch64-cpython-311/flash_attn/models
+      creating build/lib.linux-aarch64-cpython-311/flash_attn/losses
+      copying flash_attn/losses/cross_entropy.py -> build/lib.linux-aarch64-cpython-311/flash_attn/losses
+      copying flash_attn/losses/__init__.py -> build/lib.linux-aarch64-cpython-311/flash_attn/losses
+      creating build/lib.linux-aarch64-cpython-311/flash_attn/layers
+      copying flash_attn/layers/rotary.py -> build/lib.linux-aarch64-cpython-311/flash_attn/layers
+      copying flash_attn/layers/__init__.py -> build/lib.linux-aarch64-cpython-311/flash_attn/layers
+      copying flash_attn/layers/patch_embed.py -> build/lib.linux-aarch64-cpython-311/flash_attn/layers
+      creating build/lib.linux-aarch64-cpython-311/flash_attn/utils
+      copying flash_attn/utils/benchmark.py -> build/lib.linux-aarch64-cpython-311/flash_attn/utils
+      copying flash_attn/utils/distributed.py -> build/lib.linux-aarch64-cpython-311/flash_attn/utils
+      copying flash_attn/utils/pretrained.py -> build/lib.linux-aarch64-cpython-311/flash_attn/utils
+      copying flash_attn/utils/__init__.py -> build/lib.linux-aarch64-cpython-311/flash_attn/utils
+      copying flash_attn/utils/generation.py -> build/lib.linux-aarch64-cpython-311/flash_attn/utils
+      creating build/lib.linux-aarch64-cpython-311/flash_attn/ops
+      copying flash_attn/ops/layer_norm.py -> build/lib.linux-aarch64-cpython-311/flash_attn/ops
+      copying flash_attn/ops/activations.py -> build/lib.linux-aarch64-cpython-311/flash_attn/ops
+      copying flash_attn/ops/__init__.py -> build/lib.linux-aarch64-cpython-311/flash_attn/ops
+      copying flash_attn/ops/fused_dense.py -> build/lib.linux-aarch64-cpython-311/flash_attn/ops
+      copying flash_attn/ops/rms_norm.py -> build/lib.linux-aarch64-cpython-311/flash_attn/ops
+      creating build/lib.linux-aarch64-cpython-311/flash_attn/modules
+      copying flash_attn/modules/mha.py -> build/lib.linux-aarch64-cpython-311/flash_attn/modules
+      copying flash_attn/modules/embedding.py -> build/lib.linux-aarch64-cpython-311/flash_attn/modules
+      copying flash_attn/modules/__init__.py -> build/lib.linux-aarch64-cpython-311/flash_attn/modules
+      copying flash_attn/modules/block.py -> build/lib.linux-aarch64-cpython-311/flash_attn/modules
+      copying flash_attn/modules/mlp.py -> build/lib.linux-aarch64-cpython-311/flash_attn/modules
+      creating build/lib.linux-aarch64-cpython-311/flash_attn/ops/triton
+      copying flash_attn/ops/triton/rotary.py -> build/lib.linux-aarch64-cpython-311/flash_attn/ops/triton
+      copying flash_attn/ops/triton/layer_norm.py -> build/lib.linux-aarch64-cpython-311/flash_attn/ops/triton
+      copying flash_attn/ops/triton/linear.py -> build/lib.linux-aarch64-cpython-311/flash_attn/ops/triton
+      copying flash_attn/ops/triton/k_activations.py -> build/lib.linux-aarch64-cpython-311/flash_attn/ops/triton
+      copying flash_attn/ops/triton/cross_entropy.py -> build/lib.linux-aarch64-cpython-311/flash_attn/ops/triton
+      copying flash_attn/ops/triton/__init__.py -> build/lib.linux-aarch64-cpython-311/flash_attn/ops/triton
+      copying flash_attn/ops/triton/mlp.py -> build/lib.linux-aarch64-cpython-311/flash_attn/ops/triton
+      running build_ext
+      Traceback (most recent call last):
+        File "/tmp/pip-install-ll9wmch0/flash-attn_317da9b1be1a465e9813ce040c6eac11/setup.py", line 271, in run
+          urllib.request.urlretrieve(wheel_url, wheel_filename)
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/urllib/request.py", line 241, in urlretrieve
+          with contextlib.closing(urlopen(url, data)) as fp:
+                                  ^^^^^^^^^^^^^^^^^^
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/urllib/request.py", line 216, in urlopen
+          return opener.open(url, data, timeout)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/urllib/request.py", line 525, in open
+          response = meth(req, response)
+                     ^^^^^^^^^^^^^^^^^^^
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/urllib/request.py", line 634, in http_response
+          response = self.parent.error(
+                     ^^^^^^^^^^^^^^^^^^
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/urllib/request.py", line 563, in error
+          return self._call_chain(*args)
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/urllib/request.py", line 496, in _call_chain
+          result = func(*args)
+                   ^^^^^^^^^^^
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/urllib/request.py", line 643, in http_error_default
+          raise HTTPError(req.full_url, code, msg, hdrs, fp)
+      urllib.error.HTTPError: HTTP Error 404: Not Found
+      
+      During handling of the above exception, another exception occurred:
+      
+      Traceback (most recent call last):
+        File "<string>", line 2, in <module>
+        File "<pip-setuptools-caller>", line 34, in <module>
+        File "/tmp/pip-install-ll9wmch0/flash-attn_317da9b1be1a465e9813ce040c6eac11/setup.py", line 311, in <module>
+          setup(
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/setuptools/__init__.py", line 117, in setup
+          return distutils.core.setup(**attrs)  # type: ignore[return-value]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/setuptools/_distutils/core.py", line 186, in setup
+          return run_commands(dist)
+                 ^^^^^^^^^^^^^^^^^^
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/setuptools/_distutils/core.py", line 202, in run_commands
+          dist.run_commands()
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/setuptools/_distutils/dist.py", line 1001, in run_commands
+          self.run_command(cmd)
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/setuptools/dist.py", line 1107, in run_command
+          super().run_command(command)
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/setuptools/_distutils/dist.py", line 1020, in run_command
+          cmd_obj.run()
+        File "/tmp/pip-install-ll9wmch0/flash-attn_317da9b1be1a465e9813ce040c6eac11/setup.py", line 288, in run
+          super().run()
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/setuptools/command/bdist_wheel.py", line 370, in run
+          self.run_command("build")
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/setuptools/_distutils/cmd.py", line 341, in run_command
+          self.distribution.run_command(command)
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/setuptools/dist.py", line 1107, in run_command
+          super().run_command(command)
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/setuptools/_distutils/dist.py", line 1020, in run_command
+          cmd_obj.run()
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/setuptools/_distutils/command/build.py", line 135, in run
+          self.run_command(cmd_name)
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/setuptools/_distutils/cmd.py", line 341, in run_command
+          self.distribution.run_command(command)
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/setuptools/dist.py", line 1107, in run_command
+          super().run_command(command)
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/setuptools/_distutils/dist.py", line 1020, in run_command
+          cmd_obj.run()
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/setuptools/command/build_ext.py", line 97, in run
+          _build_ext.run(self)
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/setuptools/_distutils/command/build_ext.py", line 367, in run
+          self.build_extensions()
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/torch/utils/cpp_extension.py", line 822, in build_extensions
+          _check_cuda_version(compiler_name, compiler_version)
+        File "/home/spark2/miniconda3/envs/asil_env/lib/python3.11/site-packages/torch/utils/cpp_extension.py", line 680, in _check_cuda_version
+          raise RuntimeError(
+      RuntimeError: The current installed version of aarch64-conda-linux-gnu-c++ (16.1.0) is greater than the maximum required version by CUDA 13.0. Please make sure to use an adequate version of aarch64-conda-linux-gnu-c++ (>=6.0.0, <16.0).
+      [end of output]
+  
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+  ERROR: Failed building wheel for flash-attn
+  Running setup.py clean for flash-attn
+Failed to build flash-attn
+"""
 python -c "import torch; print(f'Torch: {torch.__version__}, CUDA: {torch.version.cuda}, Device: {torch.cuda.get_device_name(0)}')"
