@@ -5,5 +5,20 @@ conda env create -f asil_env.yml
 conda activate asil_env
 pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu130
 pip install -r requirements.txt
+"""
+INFO: pip is looking at multiple versions of coqui-tts to determine which version is compatible with other requirements. This could take a while.
+ERROR: Cannot install -r requirements.txt (line 11), -r requirements.txt (line 4) and transformers==4.40.1 because these package versions have conflicting dependencies.
+
+The conflict is caused by:
+    The user requested transformers==4.40.1
+    sentence-transformers 2.7.0 depends on transformers<5.0.0 and >=4.34.0
+    coqui-tts 0.24.2 depends on transformers<4.43.0 and >=4.42.0
+
+To fix this you could try to:
+1. loosen the range of package versions you've specified
+2. remove package versions to allow pip attempt to solve the dependency conflict
+
+ERROR: ResolutionImpossible: for help visit https://pip.pypa.io/en/latest/topics/dependency-resolution/#dealing-with-dependency-conflicts
+"""
 MAX_JOBS=4 pip install flash-attn==2.5.8 --no-build-isolation
 python -c "import torch; print(f'Torch: {torch.__version__}, CUDA: {torch.version.cuda}, Device: {torch.cuda.get_device_name(0)}')"
