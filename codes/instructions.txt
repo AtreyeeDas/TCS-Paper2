@@ -244,3 +244,4 @@ Building wheels for collected packages: flash-attn
 Failed to build flash-attn
 """
 python -c "import torch; print(f'Torch: {torch.__version__}, CUDA: {torch.version.cuda}, Device: {torch.cuda.get_device_name(0)}')"
+Torch: 2.14.0.dev20260801+cu130, CUDA: 13.0, Device: NVIDIA GB10
