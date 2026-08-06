@@ -88,3 +88,15 @@ dependencies:
   - ffmpeg=6.1.1
   - gcc_linux-64
   - gxx_linux-64
+This is my system-
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A            4533      G   /usr/lib/xorg/Xorg                      264MiB |
+|    0   N/A  N/A            4715      G   /usr/bin/gnome-shell                    279MiB |
+|    0   N/A  N/A            5231      G   ...exec/xdg-desktop-portal-gnome         51MiB |
+|    0   N/A  N/A          567599      G   /usr/bin/nautilus                        45MiB |
+|    0   N/A  N/A         1020283      G   .../8630/usr/lib/firefox/firefox        321MiB |
+|    0   N/A  N/A         2978645      G   /usr/share/code/code                     90MiB |
+|    0   N/A  N/A         3452924      G   ...bin/snapd-desktop-integration         42MiB 
