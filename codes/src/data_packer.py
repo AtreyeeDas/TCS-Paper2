@@ -182,16 +182,3 @@ class DataPacker:
             json.dump(meta_content, f, indent=4)
             
         return dirs
-            hf.create_dataset("final_layer", data=enc_state)
-            if result_dict.get("all_encoder_states") is not None:
-                for i, layer_state in enumerate(result_dict["all_encoder_states"]):
-                    hf.create_dataset(f"layer_{i}", data=layer_state)
-
-        # 12-17. Comprehensive JSON Report
-        report = {
-            "metadata": metrics,
-            "generation_score": result_dict["sequence_score"],
-            "status": "completed"
-        }
-        with open(os.path.join(output_dir, "metadata.json"), "w") as f:
-            json.dump(report, f, indent=4)
