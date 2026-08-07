@@ -16,7 +16,10 @@ class AudioLoader:
                 
             # Resample strictly to 16kHz for the Whisper feature extractor
             if sample_rate != self.target_sample_rate:
-                resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=self.target_sample_rate)
+                resampler = torchaudio.transforms.Resample(
+                    orig_freq=sample_rate, 
+                    new_freq=self.target_sample_rate
+                )
                 waveform = resampler(waveform)
                 
             # Squeeze to 1D array as expected by the HF Processor
