@@ -19,10 +19,13 @@ class WhisperConfig:
     language: str = "en"
     task: str = "transcribe"
     
+    # Encoder stride parameters (Whisper standard: 100 frames/sec = 20ms per frame)
+    encoder_stride_sec: float = 0.02
+    
     # I/O Config
     sample_rate: int = 16000
-    save_all_encoder_states: bool = False # Set True only if deeply debugging acoustics
-    save_decoder_states: bool = False     # Strongly recommended False to save I/O
+    save_all_encoder_states: bool = False  # Set True only if deeply debugging intermediate layers
+    save_decoder_states: bool = False      # Strongly recommended False to prevent massive disk I/O
 
 @dataclass
 class Paths:
