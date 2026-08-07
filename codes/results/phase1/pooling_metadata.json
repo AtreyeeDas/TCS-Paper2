@@ -1,0 +1,25 @@
+{
+    "embedding_dimension": 1280,
+    "sequence_length": 1500,
+    "tensor_shapes": {
+        "encoder_input": [
+            1,
+            1500,
+            1280
+        ],
+        "mean_pool": [
+            1280
+        ],
+        "max_pool": [
+            1280
+        ],
+        "attention_pool": [
+            1280
+        ]
+    },
+    "pooling_methods": [
+        "Mean Pooling (Dimension 0 average)",
+        "Max Pooling (Dimension 0 max values)",
+        "Lightweight Linear Self-Attention Pooling"
+    ]
+}

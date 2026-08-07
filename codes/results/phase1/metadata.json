@@ -1,0 +1,11 @@
+{
+    "metadata": {
+        "file_name": "raw_audio",
+        "audio_duration_seconds": 13.035125,
+        "inference_latency_seconds": 1.268862009048462,
+        "peak_vram_mb": 2064.04931640625,
+        "real_time_factor": 0.09734175997916873
+    },
+    "generation_score": -0.31099966168403625,
+    "status": "completed"
+}
