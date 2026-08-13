@@ -1,0 +1,9 @@
+# 1. Create a fresh environment
+conda create -n gemma_nlu python=3.11 -y
+conda activate gemma_nlu
+
+# 2. Install PyTorch Nightly for CUDA 13.0
+pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu130
+
+# 3. Install Hugging Face Transformers and Audio Processing libraries
+pip install transformers accelerate librosa soundfile pandas tqdm
