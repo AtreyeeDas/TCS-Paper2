@@ -7,3 +7,4 @@ pip install --pre torch torchvision torchaudio --index-url https://download.pyto
 
 # 3. Install Hugging Face Transformers and Audio Processing libraries
 pip install transformers accelerate librosa soundfile pandas tqdm
+https://mega.nz/file/B2oAhCyC#NKJMGWhw43cTOJNIBFDGMT5-POoN1SABpw8svt0SwqQ
