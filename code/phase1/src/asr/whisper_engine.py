@@ -1,196 +1,108 @@
+import time
 import torch
-import numpy as np
-from transformers import AutoProcessor, WhisperForConditionalGeneration
-from loguru import logger
+from transformers import AutoProcessor, AutoModelForSpeechSeq2Seq
 from .config import WhisperConfig
+from .outputs import ASRExtractionOutput
+from .audio_loader import AudioLoader
 
-class IntrospectionEngine:
+class WhisperEngine:
     def __init__(self, config: WhisperConfig):
         self.config = config
-        logger.info(f"Loading local Whisper model from {config.model_path} onto {config.device} ({config.dtype})")
+        print(f"Loading processor from {config.model_path}...")
+        self.processor = AutoProcessor.from_pretrained(
+            config.model_path, local_files_only=True
+        )
         
-        # Load strictly from local path, forcing native PyTorch SDPA
-        self.processor = AutoProcessor.from_pretrained(config.model_path, local_files_only=True)
-        self.model = WhisperForConditionalGeneration.from_pretrained(
+        print(f"Loading model to {config.device} in {config.dtype}...")
+        self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
             config.model_path,
             torch_dtype=config.dtype,
             local_files_only=True,
-            attn_implementation="sdpa"  # Native SDPA for Blackwell compatibility
+            attn_implementation="flash_attention_2" # Crucial for Blackwell
         ).to(config.device)
-        self.model.eval()
+        self.model.eval() # Ensure inference mode
+        
+        self.audio_loader = AudioLoader()
 
     @torch.no_grad()
-    def process(self, audio_array: np.ndarray):
+    def process_audio(self, audio_path: str) -> ASRExtractionOutput:
+        # 1. Load Audio
+        audio_array = self.audio_loader.load(audio_path)
+        duration = len(audio_array) / self.audio_loader.target_sr
+        
+        # 2. Extract Features
         inputs = self.processor(
             audio_array, 
-            sampling_rate=self.config.sample_rate, 
+            sampling_rate=self.audio_loader.target_sr, 
             return_tensors="pt"
         )
-        input_features = inputs.input_features.to(self.config.device, dtype=self.config.dtype)
+        input_features = inputs.input_features.to(self.config.device).to(self.config.dtype)
 
-        forced_decoder_ids = self.processor.get_decoder_prompt_ids(
-            language=self.config.language, 
-            task=self.config.task
-        )
-
-        logger.info("Executing forward pass with full tensor introspection...")
+        # 3. Single Forward Pass Generation
+        start_time = time.time()
         
         outputs = self.model.generate(
             input_features,
-            forced_decoder_ids=forced_decoder_ids,
-            max_new_tokens=self.config.max_new_tokens,
-            num_beams=self.config.num_beams,
-            num_return_sequences=self.config.num_return_sequences,
+            language=self.config.language,
+            task=self.config.task,
+            max_new_tokens=self.config.max_tokens,
+            num_beams=self.config.beam_size,
+            num_return_sequences=self.config.beam_size,
             return_timestamps=self.config.return_timestamps,
+            return_dict_in_generate=True,
             output_hidden_states=True,
-            output_scores=True,
-            return_dict_in_generate=True
+            output_scores=True
         )
+        
+        latency = time.time() - start_time
 
-        # -----------------------------------------------------------------
-        # ROBUST CONFIDENCE ALIGNMENT LOGIC
-        # -----------------------------------------------------------------
-        # compute_transition_scores computes log probs for each generated step.
-        # Length of transition_scores[0] = len(top_sequence) - num_prompt_tokens
-        # -----------------------------------------------------------------
+        # 4. Extract Encoder/Decoder Hidden States
+        # encoder_hidden_states is a tuple of all layers. We take the last layer [-1].
+        enc_hidden_states = outputs.encoder_hidden_states[-1] 
+        dec_hidden_states = outputs.decoder_hidden_states 
+
+        # 5. Extract Beam Candidates and Scores
+        # The sequences tensor contains `num_beams` rows. Row 0 is the best hypothesis.
+        beam_candidates = self.processor.batch_decode(outputs.sequences, skip_special_tokens=True)
+        # Sequence scores (overall score for each beam)
+        beam_scores = outputs.sequences_scores.tolist() if outputs.sequences_scores is not None else []
+        
+        # 6. Extract Best Sequence Token Strings and Log Probs
+        best_sequence_ids = outputs.sequences[0]
+        transcript = beam_candidates[0]
+        
+        # Extract individual token strings
+        token_strings = [self.processor.decode([tok_id]) for tok_id in best_sequence_ids]
+        
+        # Compute exact token-level log probabilities for the chosen sequence
         transition_scores = self.model.compute_transition_scores(
-            outputs.sequences, outputs.scores, normalize_logits=True
+            outputs.sequences, outputs.scores, outputs.beam_indices, normalize_logits=True
         )
+        # Best sequence transition scores (log probabilities)
+        best_transition_scores = transition_scores[0].cpu().numpy()
         
-        top_sequence_tensor = outputs.sequences[0]
-        top_sequence_ids = top_sequence_tensor.tolist()
-        top_trans_scores = transition_scores[0].cpu().float().numpy()
+        # Note: transition_scores length matches generated tokens (excluding prompt/forced tokens)
+        # We align them here.
+        token_log_probs = best_transition_scores.tolist()
+
+        # 7. Extract Timestamps (Basic segment parsing based on HF outputs)
+        # HF timestamp extraction from raw sequences requires looking for timestamp tokens.
+        # For Phase 1, we decode with timestamps=True to get segment boundaries in text.
+        decoded_with_timestamps = self.processor.decode(best_sequence_ids, skip_special_tokens=False)
         
-        num_generated = len(top_trans_scores)
-        total_tokens = len(top_sequence_ids)
-        prompt_len = total_tokens - num_generated
-
-        raw_tokens_str = self.processor.tokenizer.convert_ids_to_tokens(top_sequence_ids)
-        
-        raw_tokens_data = []
-        clean_tokens_data = []
-
-        for idx, (token_id, raw_tok) in enumerate(zip(top_sequence_ids, raw_tokens_str)):
-            # Determine if token was part of initial decoder prompt or newly generated
-            if idx < prompt_len:
-                log_prob = 0.0
-                confidence = 1.0
-            else:
-                gen_idx = idx - prompt_len
-                log_prob = float(top_trans_scores[gen_idx])
-                confidence = float(np.exp(log_prob))
-
-            is_timestamp = bool(raw_tok.startswith("<|") and raw_tok.endswith("|>") and raw_tok[2:-2].replace(".", "", 1).isdigit())
-
-            raw_tokens_data.append({
-                "token_id": int(token_id),
-                "raw_token": raw_tok,
-                "is_timestamp": is_timestamp,
-                "decoder_log_prob": log_prob,
-                "confidence": confidence
-            })
-
-            # Clean tokens filtering for clean_tokens.csv
-            if not (raw_tok.startswith("<|") and raw_tok.endswith("|>")):
-                cleaned_word = raw_tok.replace("Ġ", "").replace(" ", "").strip()
-                if cleaned_word:
-                    clean_tokens_data.append({
-                        "cleaned_display_token": cleaned_word,
-                        "confidence": confidence
-                    })
-
-        # -----------------------------------------------------------------
-        # TRANSCRIPT AND BEAM CANDIDATES EXTRACTION
-        # -----------------------------------------------------------------
-        transcript = self.processor.decode(top_sequence_tensor, skip_special_tokens=True)
-
-        beam_hypotheses = []
-        for i in range(1, self.config.num_return_sequences):
-            beam_text = self.processor.decode(outputs.sequences[i], skip_special_tokens=True)
-            beam_hypotheses.append(beam_text)
-
-        # -----------------------------------------------------------------
-        # ENCODER HIDDEN STATES EXTRACTION
-        # -----------------------------------------------------------------
-        final_encoder_state = outputs.encoder_hidden_states[-1].cpu().float().numpy()
-        
-        all_encoder_states = None
-        if self.config.save_all_encoder_states:
-            all_encoder_states = [layer.cpu().float().numpy() for layer in outputs.encoder_hidden_states]
-
-        return {
-            "transcript": transcript.strip(),
-            "raw_tokens_data": raw_tokens_data,
-            "clean_tokens_data": clean_tokens_data,
-            "beam_hypotheses": beam_hypotheses,
-            "final_encoder_state": final_encoder_state,
-            "all_encoder_states": all_encoder_states,
-            "sequence_score": outputs.sequences_scores[0].item() if outputs.sequences_scores is not None else 1.0
-        }
-        logger.info("Executing forward pass with full tensor introspection...")
-        
-        # The monolithic generate call mapping to all your research questions
-        outputs = self.model.generate(
-            input_features,
-            forced_decoder_ids=forced_decoder_ids,
-            max_new_tokens=self.config.max_new_tokens,
-            num_beams=self.config.num_beams,
-            num_return_sequences=self.config.num_return_sequences,
-            return_timestamps=self.config.return_timestamps,
-            output_hidden_states=True,
-            output_scores=True,
-            return_dict_in_generate=True
+        # Return cleanly packaged dataclass
+        return ASRExtractionOutput(
+            transcript=transcript,
+            segments=[{"text": transcript, "start": 0.0, "end": duration}], # Placeholder for deep segment parsing
+            timestamps=[], # To be fully mapped if needed in phase 2
+            encoder_hidden_states=enc_hidden_states,
+            decoder_hidden_states=dec_hidden_states,
+            token_ids=best_sequence_ids.tolist(),
+            token_strings=token_strings,
+            token_log_probs=token_log_probs,
+            beam_candidates=beam_candidates,
+            beam_scores=beam_scores,
+            language=self.config.language,
+            duration=duration,
+            latency=latency
         )
-
-        # 1. Compute rigorous Log Probabilities
-        transition_scores = self.model.compute_transition_scores(
-            outputs.sequences, outputs.scores, normalize_logits=True
-        )
-        
-        # Confidence calculation: Confidence = exp(Log_Probability)
-        confidences = torch.exp(transition_scores)
-
-        # 2. Extract Top-1 Transcript and Timestamps
-        top_sequence = outputs.sequences[0]
-        top_confidence = confidences[0]
-        
-        # Decode without special tokens to get clean text
-        transcript = self.processor.decode(top_sequence, skip_special_tokens=True)
-        tokens_with_special = self.processor.tokenizer.convert_ids_to_tokens(top_sequence)
-        
-        # 3. Parse Token-Level Data
-        parsed_tokens = []
-        parsed_confidences = []
-        for i, token in enumerate(tokens_with_special):
-            if token.startswith("<|") and token.endswith("|>"):
-                continue # Skip pure timestamp/control tokens in the CSV
-            
-            # Align token with its confidence score
-            score_idx = i - (len(tokens_with_special) - len(top_confidence))
-            conf = top_confidence[score_idx].item() if score_idx >= 0 else 1.0
-            
-            parsed_tokens.append(token.replace("Ġ", "")) 
-            parsed_confidences.append(conf)
-
-        # 4. Extract Beam Hypotheses (excluding the top sequence)
-        beam_hypotheses = []
-        for i in range(1, self.config.num_return_sequences):
-            beam_text = self.processor.decode(outputs.sequences[i], skip_special_tokens=True)
-            beam_hypotheses.append(beam_text)
-
-        # 5. Extract Hidden States
-        final_encoder_state = outputs.encoder_hidden_states[-1].cpu().float().numpy()
-        
-        all_encoder_states = None
-        if self.config.save_all_encoder_states:
-            all_encoder_states = [layer.cpu().float().numpy() for layer in outputs.encoder_hidden_states]
-
-        return {
-            "transcript": transcript.strip(),
-            "tokens": parsed_tokens,
-            "confidences": parsed_confidences,
-            "beam_hypotheses": beam_hypotheses,
-            "final_encoder_state": final_encoder_state,
-            "all_encoder_states": all_encoder_states,
-            "sequence_score": outputs.sequences_scores[0].item() if outputs.sequences_scores is not None else 1.0
-        }
