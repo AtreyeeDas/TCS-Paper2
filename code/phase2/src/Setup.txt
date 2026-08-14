@@ -1,0 +1,4 @@
+mkdir -p asil_nlu/embeddings/mean_pool asil_nlu/embeddings/attention_pool
+mkdir -p asil_nlu/models/mean_pool asil_nlu/models/attention_pool
+mkdir -p asil_nlu/results/splits asil_nlu/results/figures asil_nlu/results/reports asil_nlu/results/label_maps asil_nlu/results/predictions
+mkdir -p asil_nlu/logs asil_nlu/scripts
