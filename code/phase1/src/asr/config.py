@@ -1,15 +1,33 @@
-from dataclasses import dataclass
+import os
 import torch
+from dataclasses import dataclass
 
 @dataclass
 class WhisperConfig:
-    # Use absolute local path as requested
-    model_path: str = "/path/to/your/local/whisper-large-v3-turbo"
-    device: str = "cuda:0" if torch.cuda.is_available() else "cpu"
-    # Blackwell optimally supports bfloat16 or float16; float16 is standard for Whisper
-    dtype: torch.dtype = torch.float16 
-    beam_size: int = 5
-    max_tokens: int = 448
-    language: str = "hi" # Hindi/Hinglish default, can be "en"
-    task: str = "transcribe"
+    # Use bfloat16 for Blackwell architecture stability and VRAM optimization
+    device: str = "cuda" if torch.cuda.is_available() else "cpu"
+    dtype: torch.dtype = torch.bfloat16 
+    
+    # Absolute path to your local model
+    model_path: str = "/home/spark2/Models/whisper_large_v3_turbo"
+    
+    # Generation parameters required for ASIL introspection
+    num_beams: int = 5
+    num_return_sequences: int = 5
+    max_new_tokens: int = 256
     return_timestamps: bool = True
+    language: str = "en"
+    task: str = "transcribe"
+    
+    # Encoder stride parameters (Whisper standard: 100 frames/sec = 20ms per frame)
+    encoder_stride_sec: float = 0.02
+    
+    # I/O Config
+    sample_rate: int = 16000
+    save_all_encoder_states: bool = False  # Set True only if deeply debugging intermediate layers
+    save_decoder_states: bool = False      # Strongly recommended False to prevent massive disk I/O
+
+@dataclass
+class Paths:
+    raw_audio_dir: str = "datasets/raw_audio"
+    results_dir: str = "results"
