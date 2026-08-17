@@ -1,7 +1,7 @@
 """
 Queries local Gemma model to propose semantic groupings and canonical classes.
 Implements domain-specific rules (Emotion 7-class, Urgency 4-level, Intent scenario_action).
-Validates JSON schemas and retries malformed outputs.
+Validates JSON schemas, automatically repairs trailing commas, and retries malformed outputs.
 """
 import os
 import re
@@ -24,6 +24,17 @@ class GemmaOntologyProposer:
             trust_remote_code=True
         ).eval()
 
+    def _clean_json_string(self, json_str: str) -> str:
+        """Repairs common LLM JSON formatting errors like trailing commas and markdown blocks."""
+        # 1. Strip markdown wrapper backticks
+        json_str = re.sub(r"```(?:json)?", "", json_str).strip()
+        
+        # 2. Fix trailing commas before closing brackets/braces (The root cause of the parsing crash)
+        # Looks for a comma, optional whitespace, and then a closing } or ]
+        json_str = re.sub(r",(\s*[}\]])", r"\1", json_str)
+        
+        return json_str
+
     def query_gemma(self, prompt: str, max_retries: int = 3) -> list:
         """Executes inference and strictly parses the JSON array response with retries."""
         messages = [{"role": "user", "content": prompt}]
@@ -42,18 +53,26 @@ class GemmaOntologyProposer:
             response_tokens = outputs[0][inputs.input_ids.shape[-1]:]
             text = self.tokenizer.decode(response_tokens, skip_special_tokens=True).strip()
 
-            # Attempt JSON array parsing
+            # Attempt JSON array parsing with robust cleaning
             try:
-                match = re.search(r"\[.*\]", text, re.DOTALL)
+                clean_text = self._clean_json_string(text)
+                
+                # Extract the array block if there's conversational wrapper text
+                match = re.search(r"\[.*\]", clean_text, re.DOTALL)
                 if match:
                     parsed = json.loads(match.group(0))
                     if isinstance(parsed, list):
                         return parsed
-                parsed = json.loads(text)
+                        
+                # Fallback: try parsing the whole cleaned string
+                parsed = json.loads(clean_text)
                 if isinstance(parsed, list):
                     return parsed
+                    
             except Exception as e:
                 print(f"[!] JSON parse retry {attempt+1}/{max_retries} due to: {e}")
+                if attempt == max_retries - 1:
+                    print(f"[-] Final failed raw output snippet: {text[:300]}...")
         
         return []
 
