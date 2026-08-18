@@ -1,0 +1,5 @@
+class,current_samples,recommended_training_floor,tts_needed,recommendation
+LOW,871,150,NO,Use real samples; weighted sampler handles imbalance.
+MEDIUM,1191,150,NO,Use real samples; optionally cap training pool at 150.
+HIGH,83,150,YES,Generate 67 additional diverse training utterances; keep all validation/test real.
+CRITICAL,6,60,YES,Generate 54 diverse training utterances. Do not generate hundreds; retain a meaningful real/synthetic mixture and report augmentation.
