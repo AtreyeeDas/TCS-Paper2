@@ -1,53 +1,60 @@
 import torch
 import torch.nn as nn
-import json
-import os
 from config import Config
 
 class ASILNLU(nn.Module):
-    def __init__(self, mode="mean", label_counts=None):
+    def __init__(self, label_counts):
         super().__init__()
-        self.mode = mode
-        self.input_dim = 1280
         
-        if mode == "attention":
-            self.attention_pool = nn.Sequential(
-                nn.Linear(self.input_dim, 256),
-                nn.Tanh(),
-                nn.Linear(256, 1, bias=False)
-            )
-            
-        self.shared_mlp = nn.Sequential(
-            nn.Linear(self.input_dim, 512),
-            nn.LayerNorm(512),
-            nn.GELU(),
-            nn.Dropout(0.2),
-            nn.Linear(512, 256),
-            nn.GELU(),
-            nn.Dropout(0.2)
+        # Whisper Projection
+        self.whisper_proj = nn.Sequential(
+            nn.Linear(1280, Config.FUSION_DIM),
+            nn.LayerNorm(Config.FUSION_DIM),
+            nn.GELU()
         )
         
+        # Acoustic Projection (Lightweight)
+        if Config.USE_ACOUSTIC:
+            self.acoustic_proj = nn.Sequential(
+                nn.Linear(Config.ACOUSTIC_FEATURE_DIM, Config.ACOUSTIC_HIDDEN_DIM),
+                nn.LayerNorm(Config.ACOUSTIC_HIDDEN_DIM),
+                nn.GELU(),
+                nn.Dropout(Config.DROPOUT),
+                nn.Linear(Config.ACOUSTIC_HIDDEN_DIM, Config.FUSION_DIM)
+            )
+            
+            if Config.USE_GATED_FUSION:
+                self.gate = nn.Sequential(
+                    nn.Linear(Config.FUSION_DIM * 2, Config.FUSION_DIM),
+                    nn.Sigmoid()
+                )
+        
+        # Head-Specific lightweight gating/projection
         self.heads = nn.ModuleDict()
         for head, num_classes in label_counts.items():
-            self.heads[head] = nn.Linear(256, num_classes)
+            self.heads[head] = nn.Sequential(
+                nn.Linear(Config.FUSION_DIM, 256),
+                nn.GELU(),
+                nn.Dropout(Config.DROPOUT),
+                nn.Linear(256, num_classes)
+            )
             
-    def forward(self, x):
-        # x shape: [B, 1280] for mean, [B, T, 1280] for attention
-        if self.mode == "attention":
-            attn_weights = torch.softmax(self.attention_pool(x), dim=1) # [B, T, 1]
-            x = torch.sum(x * attn_weights, dim=1) # [B, 1280]
-            
-        shared_rep = self.shared_mlp(x)
+    def forward(self, whisper_emb, acoustic_emb=None):
+        w_proj = self.whisper_proj(whisper_emb)
+        gate_vals = None
         
+        if Config.USE_ACOUSTIC and acoustic_emb is not None:
+            a_proj = self.acoustic_proj(acoustic_emb)
+            if Config.USE_GATED_FUSION:
+                gate_vals = self.gate(torch.cat([w_proj, a_proj], dim=-1))
+                fused = w_proj + (gate_vals * a_proj)
+            else:
+                fused = w_proj + a_proj # Simple addition baseline
+        else:
+            fused = w_proj
+            
         outputs = {}
         for head_name, layer in self.heads.items():
-            outputs[head_name] = layer(shared_rep)
+            outputs[head_name] = layer(fused)
             
-        return outputs
-
-def get_label_counts():
-    counts = {}
-    for head in Config.HEADS:
-        with open(os.path.join(Config.ROOT_DIR, "results", "label_maps", f"{head}.json"), "r") as f:
-            counts[head] = len(json.load(f)) - 1 # Exclude MASK
-    return counts
+        return outputs, gate_vals
