@@ -4,7 +4,7 @@ import torch
 class Config:
     ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     DATA_DIR = os.path.join(ROOT_DIR, "ASIL_DATASETS")
-    MASTER_CSV = os.path.join(ROOT_DIR, "master_nlu_dataset.csv")
+    MASTER_CSV = os.path.join(ROOT_DIR, "master_nlu_dataset_canonical_augmented.csv")
     WHISPER_PATH = "/home/spark2/Models/whisper_large_v3_turbo"
     
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
