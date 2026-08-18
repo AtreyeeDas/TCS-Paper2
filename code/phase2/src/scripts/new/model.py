@@ -85,3 +85,17 @@ def get_label_counts():
         with open(os.path.join(Config.ROOT_DIR, "results", "label_maps", f"{head}.json"), "r") as f:
             counts[head] = len(json.load(f)) - 1 # Exclude MASK
     return counts
+
+"""
+
+self.whisper_proj = nn.Sequential(
+    nn.Linear(Config.WHISPER_DIM, 512),
+    nn.LayerNorm(512),
+    nn.GELU(),
+    nn.Dropout(0.2),
+    nn.Linear(512, Config.FUSION_DIM),
+    nn.GELU(),
+    nn.Dropout(0.2)
+)
+self.heads[head] = nn.Linear(Config.FUSION_DIM, num_classes)
+"""
