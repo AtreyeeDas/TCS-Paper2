@@ -1,0 +1,22 @@
+ASIL NLU - DATASET & SPLIT DIAGNOSTIC REPORT
+======================================================================
+
+Total Dataset Samples : 4712
+Train Split Samples   : 3565
+Val Split Samples     : 572
+Test Split Samples    : 575
+
+MASK PER HEAD:
+  - domain         :  1050 MASK (22.28%)
+  - subdomain      :  1056 MASK (22.41%)
+  - intent         :  1052 MASK (22.33%)
+  - entity_type    :  1069 MASK (22.69%)
+  - urgency        :  1701 MASK (36.10%)
+  - emotion        :  2802 MASK (59.47%)
+
+LEAKAGE VERIFICATION:
+  - Train/Val Leaked Transcripts  : 0
+  - Train/Test Leaked Transcripts : 0
+  - Val/Test Leaked Transcripts   : 0
+
+OUT-OF-VOCABULARY TEST CLASSES (Missing from Train):

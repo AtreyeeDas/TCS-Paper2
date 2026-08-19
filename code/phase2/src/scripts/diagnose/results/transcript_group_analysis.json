@@ -1,0 +1,8 @@
+{
+    "unique_transcripts_total": 3874,
+    "train_val_transcript_leakage_count": 0,
+    "train_test_transcript_leakage_count": 0,
+    "val_test_transcript_leakage_count": 0,
+    "train_val_leaked_transcripts": [],
+    "train_test_leaked_transcripts": []
+}

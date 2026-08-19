@@ -1,0 +1,7 @@
+head,total_valid_samples,mask_samples,total_unique_classes,train_classes_count,val_classes_count,test_classes_count,val_oov_classes,test_oov_classes,min_class_size,max_class_size,median_class_size,imbalance_ratio
+domain,3662,1050,3,3,3,3,[],[],651,2022,989.0,3.11
+subdomain,3656,1056,6,6,6,6,[],[],373,732,630.5,1.96
+intent,3660,1052,14,14,14,14,[],[],107,492,235.0,4.6
+entity_type,3643,1069,20,20,20,20,[],[],31,494,156.5,15.94
+urgency,3011,1701,4,4,3,4,[],[],436,1191,692.0,2.73
+emotion,1910,2802,7,7,7,7,[],[],150,579,257.0,3.86

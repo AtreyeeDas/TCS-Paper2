@@ -1,0 +1,22 @@
+experiment,head,macro_f1,balanced_accuracy,accuracy,interpretation
+Text_UpperBound_TFIDF,domain,0.9566,0.9356,0.9639,Ground-truth transcript learnability limit
+Text_UpperBound_TFIDF,subdomain,0.7252,0.7232,0.7711,Ground-truth transcript learnability limit
+Text_UpperBound_TFIDF,intent,0.4343,0.4539,0.5181,Ground-truth transcript learnability limit
+Text_UpperBound_TFIDF,entity_type,0.2865,0.3071,0.4501,Ground-truth transcript learnability limit
+Text_UpperBound_TFIDF,urgency,0.3269,0.3355,0.6597,Ground-truth transcript learnability limit
+Text_UpperBound_TFIDF,emotion,0.2216,0.2376,0.2313,Ground-truth transcript learnability limit
+Whisper_Linear_Probe,domain,1.0,1.0,1.0,Linear separability of 1280-D Whisper space
+Whisper_SingleTask_MLP,domain,0.992,0.9962,0.9928,Non-linear single-task capacity on Whisper
+Whisper_Linear_Probe,subdomain,0.4547,0.4547,0.3904,Linear separability of 1280-D Whisper space
+Whisper_SingleTask_MLP,subdomain,0.4875,0.4943,0.4458,Non-linear single-task capacity on Whisper
+Whisper_Linear_Probe,intent,0.3985,0.4095,0.4506,Linear separability of 1280-D Whisper space
+Whisper_SingleTask_MLP,intent,0.3646,0.3827,0.4193,Non-linear single-task capacity on Whisper
+Whisper_Linear_Probe,entity_type,0.2408,0.2486,0.3406,Linear separability of 1280-D Whisper space
+Whisper_SingleTask_MLP,entity_type,0.2481,0.2587,0.3528,Non-linear single-task capacity on Whisper
+Whisper_Linear_Probe,urgency,0.2826,0.2908,0.5672,Linear separability of 1280-D Whisper space
+Whisper_SingleTask_MLP,urgency,0.2488,0.2698,0.5522,Non-linear single-task capacity on Whisper
+Whisper_Linear_Probe,emotion,0.3586,0.3607,0.3563,Linear separability of 1280-D Whisper space
+Whisper_SingleTask_MLP,emotion,0.189,0.2252,0.2188,Non-linear single-task capacity on Whisper
+Whisper_Attention_Pooling,intent,0.3422,0.3581,0.3759,Attention pooling (Mean weight entropy: 3.704)
+Whisper_Attention_Pooling,emotion,0.2899,0.2896,0.2875,Attention pooling (Mean weight entropy: 3.166)
+Source_Acoustic_Probe,SOURCE_DATASET,1.0,1.0,1.0,Acoustic/recording environment signal present in embeddings
