@@ -1,0 +1,235 @@
+ASIL NLU Diagnostic Study — Condensed Findings
+
+1. What we tested
+
+We ran a focused diagnostic suite to determine why the six-head NLU performs poorly despite using frozen Whisper-large-v3-turbo embeddings:
+
+Experiment	What we wanted to determine
+
+TF-IDF text baseline vs. Whisper probes	Is the problem fundamentally the frozen Whisper representation or the classification task/data?
+Linear + MLP probes	Is useful information present in Whisper embeddings?
+Mean vs. attention pooling	Is information being lost by pooling?
+Source-dataset probe	Does Whisper encode strong dataset/source-specific information?
+PCA embedding analysis	Visually verify source structure in the embedding space
+Single-task vs. 6-head joint NLU	Is multi-task learning causing interference?
+Four balancing strategies	Is class balancing helping or hurting?
+Real-only vs. real+synthetic training	Does synthetic TTS damage real-speech generalization?
+
+
+
+---
+
+2. What the results directly showed
+
+Finding	Result	Direct interpretation
+
+Whisper → Domain	F1 = 1.000	Domain information is extremely easy to extract
+TF-IDF → Domain	F1 = 0.957	Domain is also easy from transcript
+TF-IDF → Intent	F1 = 0.434	Intent is intrinsically difficult
+Whisper → Intent	F1 = 0.399	Some information is lost relative to clean text
+TF-IDF → Entity	F1 = 0.287	Entity classification is intrinsically difficult
+Whisper → Entity	F1 = 0.241	Some additional information is lost in Whisper representation
+TF-IDF → Urgency	F1 = 0.327	Urgency labels are poorly separable even from clean text
+Whisper → Urgency	F1 = 0.283	Representation contributes some additional degradation
+TF-IDF → Emotion	F1 = 0.222	Text alone is weak for emotion
+Whisper → Emotion	F1 = 0.359	Whisper contains useful affective/acoustic information
+Whisper → Source	Accuracy = 1.000	Source/dataset identity is extremely strongly encoded
+Embedding NaN/Inf	0 / 0	Embeddings are numerically healthy
+Transcript leakage	None detected	Split leakage is not the explanation
+Test OOV classes	None detected	Missing train classes are not the explanation
+
+
+Most important observation
+
+The frozen Whisper representation is not simply "bad."
+
+It successfully contains information for domain and emotion, while intent/entity/urgency remain difficult.
+
+Therefore:
+
+> The evidence does not support "Whisper representation is fundamentally insufficient" as the main cause.
+
+
+
+
+---
+
+3. Source/dataset confounding — major finding
+
+The strongest diagnostic result was:
+
+Whisper embedding → source dataset = 100% accuracy
+
+A simple Logistic Regression classifier could identify the originating dataset using only the 1280-D Whisper embedding.
+
+The PCA visualization independently showed strong source-specific clustering:
+
+Earnings-21: clearly separated cluster
+
+Medical Dialogue: clearly separated cluster
+
+Synthetic TTS: particularly distinct cluster
+
+MELD / SLURP: separate regions
+
+
+Figure to include:
+pca_source_distribution.png
+
+Caption:
+PCA projection of frozen Whisper mean embeddings coloured by source dataset, showing strong source-specific clustering.
+
+This means the embedding contains substantial information related to dataset/source identity.
+
+However, we cannot claim that this is purely acoustic leakage. Source information may reflect acoustics, speakers, recording conditions, vocabulary, linguistic style, domain and dataset construction.
+
+Important implication
+
+Your Domain F1 = 1.0 is not sufficient evidence of genuine domain understanding, because domain and dataset source are strongly correlated.
+
+
+---
+
+4. What is actually causing the poor NLU results?
+
+The evidence points primarily to three interacting problems:
+
+1. Label/task conditioning is the biggest problem
+
+Intent, entity and urgency are intrinsically difficult even using clean ground-truth transcripts:
+
+Intent: 0.434
+Entity: 0.287
+Urgency: 0.327
+
+Therefore, simply changing Whisper pooling, adding another acoustic encoder, or increasing MLP complexity cannot magically solve the underlying label separability problem.
+
+The current ontology contains semantically overlapping classes and relatively small tail classes.
+
+
+---
+
+2. Whisper representation contributes additional loss for some heads
+
+Comparison:
+
+Clean text       Whisper
+Intent              0.434           0.399
+Entity              0.287           0.241
+Urgency             0.327           0.283
+Emotion             0.222           0.359
+Domain              0.957           1.000
+
+So Whisper causes some degradation for intent/entity/urgency, but it is not the primary explanation, because even perfect text performs poorly.
+
+Conversely, Whisper is actually better than TF-IDF for emotion.
+
+
+---
+
+3. Dataset/source structure is extremely strong
+
+Source probe = 100%
+
+and PCA shows strong clustering.
+
+Therefore the current dataset is not a clean demonstration of domain-independent NLU. The model can potentially exploit source-correlated characteristics.
+
+
+---
+
+5. What we are NOT blaming
+
+The diagnostics do not support these as the main causes:
+
+❌ Whisper embeddings being numerically corrupted — NaN = 0, Inf = 0
+
+❌ Train/test transcript leakage — none detected
+
+❌ Test-only/OOV classes — none detected
+
+❌ Emotion information being absent from Whisper — actually the opposite
+
+❌ Synthetic data automatically being invalid — this was tested separately rather than assumed
+
+❌ Simply needing a larger MLP — the clean-text baseline shows the classification problem itself is difficult
+
+
+
+---
+
+6. Final diagnosis
+
+> The dominant failure is the conditioning of the NLU classification problem — particularly the semantic granularity, overlap and support of the intent/entity/urgency labels. Frozen Whisper representations contribute additional information loss for some fine-grained heads, but they are not fundamentally incapable of supporting NLU. The representation also contains strong source/dataset structure, which explains why Domain is exceptionally easy and introduces a potential confounding factor.
+
+
+
+This is the scientifically defensible conclusion from the experiments performed.
+
+
+---
+
+7. What we are doing now
+
+Primary correction: rebuild the label ontology, NOT the Whisper encoder
+
+We will take the existing ~4.7k-row canonical dataset and use Gemma-assisted semantic relabeling:
+
+Existing 4.7k labels
+        ↓
+Deterministic normalization
+        ↓
+Gemma semantic grouping
+        ↓
+Small finite canonical ontology
+        ↓
+Frequency + semantic-boundary constraints
+        ↓
+Remove/merge unusable tail classes
+        ↓
+Generate additional samples ONLY where
+a semantically important class remains under-supported
+        ↓
+FINAL CANONICAL LABELS
+        ↓
+Automatically remap every row
+        ↓
+Retrain the same 6-head NLU
+
+The crucial constraint is:
+
+> We will not return to hundreds/thousands of intent/entity classes or create another severely imbalanced ontology.
+
+
+
+Each retained class must have:
+
+clear semantic meaning,
+
+enough examples for MLP learning,
+
+meaningful distinction from neighbouring classes,
+
+reasonable class frequency.
+
+
+Current modelling decision
+
+For now:
+
+Keep frozen Whisper
+
+Keep the six-head multi-task architecture
+
+Discard balancing complexity
+
+Treat synthetic data as normal training data
+
+Do not fine-tune Whisper
+
+Do not add HuBERT unless later evidence shows it is necessary
+
+Fix the labels/ontology first
+
+
+That gives us the cleanest next experiment: same Whisper + same NLU architecture + substantially better-conditioned canonical labels, allowing us to determine how much of the current failure was caused by the label construction itself.
