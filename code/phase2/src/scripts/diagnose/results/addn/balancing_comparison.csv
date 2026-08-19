@@ -1,0 +1,5 @@
+condition,domain_f1,domain_bal_acc,subdomain_f1,subdomain_bal_acc,intent_f1,intent_bal_acc,entity_type_f1,entity_type_bal_acc,urgency_f1,urgency_bal_acc,emotion_f1,emotion_bal_acc,mean_f1,mean_bal_acc
+A_No_Balancing,1.0,1.0,0.5086,0.5501,0.3623,0.3969,0.2782,0.2871,0.3129,0.314,0.2961,0.3086,0.4597,0.4761
+B_Weighted_Loss_Only,1.0,1.0,0.4855,0.531,0.3463,0.3673,0.2635,0.3192,0.341,0.3452,0.2875,0.3137,0.454,0.4794
+C_Sampler_Only,1.0,1.0,0.4873,0.5065,0.3479,0.3573,0.2937,0.294,0.2914,0.2958,0.1792,0.2072,0.4332,0.4435
+D_Sampler_Plus_Weighted_Loss,1.0,1.0,0.4756,0.49,0.3523,0.3815,0.2516,0.2835,0.3032,0.3041,0.1833,0.2103,0.4277,0.4449

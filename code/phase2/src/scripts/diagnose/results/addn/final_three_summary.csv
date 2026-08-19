@@ -1,0 +1,49 @@
+experiment,head,macro_f1,balanced_accuracy,accuracy,interpretation
+Exp1_Joint_MultiTask,domain,1.0,1.0,1.0,Shared backbone multi-task learning
+Exp1_Single_Task,domain,1.0,1.0,1.0,Independent classifier without shared interference
+Exp1_Joint_MultiTask,subdomain,0.5086,0.5501,0.4795,Shared backbone multi-task learning
+Exp1_Single_Task,subdomain,0.5059,0.5272,0.5157,Independent classifier without shared interference
+Exp1_Joint_MultiTask,intent,0.3623,0.3969,0.4048,Shared backbone multi-task learning
+Exp1_Single_Task,intent,0.3743,0.3881,0.4337,Independent classifier without shared interference
+Exp1_Joint_MultiTask,entity_type,0.2782,0.2871,0.3796,Shared backbone multi-task learning
+Exp1_Single_Task,entity_type,0.294,0.3004,0.365,Independent classifier without shared interference
+Exp1_Joint_MultiTask,urgency,0.3129,0.314,0.5672,Shared backbone multi-task learning
+Exp1_Single_Task,urgency,0.3078,0.3066,0.5403,Independent classifier without shared interference
+Exp1_Joint_MultiTask,emotion,0.2961,0.3086,0.3187,Shared backbone multi-task learning
+Exp1_Single_Task,emotion,0.2951,0.2918,0.2938,Independent classifier without shared interference
+Exp2_A_No_Balancing,domain,1.0,1.0,,Balancing condition A_No_Balancing
+Exp2_A_No_Balancing,subdomain,0.5086,0.5501,,Balancing condition A_No_Balancing
+Exp2_A_No_Balancing,intent,0.3623,0.3969,,Balancing condition A_No_Balancing
+Exp2_A_No_Balancing,entity_type,0.2782,0.2871,,Balancing condition A_No_Balancing
+Exp2_A_No_Balancing,urgency,0.3129,0.314,,Balancing condition A_No_Balancing
+Exp2_A_No_Balancing,emotion,0.2961,0.3086,,Balancing condition A_No_Balancing
+Exp2_B_Weighted_Loss_Only,domain,1.0,1.0,,Balancing condition B_Weighted_Loss_Only
+Exp2_B_Weighted_Loss_Only,subdomain,0.4855,0.531,,Balancing condition B_Weighted_Loss_Only
+Exp2_B_Weighted_Loss_Only,intent,0.3463,0.3673,,Balancing condition B_Weighted_Loss_Only
+Exp2_B_Weighted_Loss_Only,entity_type,0.2635,0.3192,,Balancing condition B_Weighted_Loss_Only
+Exp2_B_Weighted_Loss_Only,urgency,0.341,0.3452,,Balancing condition B_Weighted_Loss_Only
+Exp2_B_Weighted_Loss_Only,emotion,0.2875,0.3137,,Balancing condition B_Weighted_Loss_Only
+Exp2_C_Sampler_Only,domain,1.0,1.0,,Balancing condition C_Sampler_Only
+Exp2_C_Sampler_Only,subdomain,0.4873,0.5065,,Balancing condition C_Sampler_Only
+Exp2_C_Sampler_Only,intent,0.3479,0.3573,,Balancing condition C_Sampler_Only
+Exp2_C_Sampler_Only,entity_type,0.2937,0.294,,Balancing condition C_Sampler_Only
+Exp2_C_Sampler_Only,urgency,0.2914,0.2958,,Balancing condition C_Sampler_Only
+Exp2_C_Sampler_Only,emotion,0.1792,0.2072,,Balancing condition C_Sampler_Only
+Exp2_D_Sampler_Plus_Weighted_Loss,domain,1.0,1.0,,Balancing condition D_Sampler_Plus_Weighted_Loss
+Exp2_D_Sampler_Plus_Weighted_Loss,subdomain,0.4756,0.49,,Balancing condition D_Sampler_Plus_Weighted_Loss
+Exp2_D_Sampler_Plus_Weighted_Loss,intent,0.3523,0.3815,,Balancing condition D_Sampler_Plus_Weighted_Loss
+Exp2_D_Sampler_Plus_Weighted_Loss,entity_type,0.2516,0.2835,,Balancing condition D_Sampler_Plus_Weighted_Loss
+Exp2_D_Sampler_Plus_Weighted_Loss,urgency,0.3032,0.3041,,Balancing condition D_Sampler_Plus_Weighted_Loss
+Exp2_D_Sampler_Plus_Weighted_Loss,emotion,0.1833,0.2103,,Balancing condition D_Sampler_Plus_Weighted_Loss
+Exp3_RealOnly_EvalRealTest,domain,1.0,,,Trained only on real speech; evaluated on real speech
+Exp3_RealPlusSynth_EvalRealTest,domain,1.0,,,Trained on real+synthetic; evaluated on real speech
+Exp3_RealOnly_EvalRealTest,subdomain,0.4628,,,Trained only on real speech; evaluated on real speech
+Exp3_RealPlusSynth_EvalRealTest,subdomain,0.5086,,,Trained on real+synthetic; evaluated on real speech
+Exp3_RealOnly_EvalRealTest,intent,0.3838,,,Trained only on real speech; evaluated on real speech
+Exp3_RealPlusSynth_EvalRealTest,intent,0.3623,,,Trained on real+synthetic; evaluated on real speech
+Exp3_RealOnly_EvalRealTest,entity_type,0.2513,,,Trained only on real speech; evaluated on real speech
+Exp3_RealPlusSynth_EvalRealTest,entity_type,0.2782,,,Trained on real+synthetic; evaluated on real speech
+Exp3_RealOnly_EvalRealTest,urgency,0.273,,,Trained only on real speech; evaluated on real speech
+Exp3_RealPlusSynth_EvalRealTest,urgency,0.3129,,,Trained on real+synthetic; evaluated on real speech
+Exp3_RealOnly_EvalRealTest,emotion,0.2656,,,Trained only on real speech; evaluated on real speech
+Exp3_RealPlusSynth_EvalRealTest,emotion,0.2961,,,Trained on real+synthetic; evaluated on real speech

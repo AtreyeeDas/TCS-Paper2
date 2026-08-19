@@ -1,0 +1,7 @@
+head,joint_f1,single_f1,delta_f1,interference_detected
+domain,1.0,1.0,0.0,False
+subdomain,0.5086,0.5059,-0.0027,False
+intent,0.3623,0.3743,0.012,False
+entity_type,0.2782,0.294,0.0158,False
+urgency,0.3129,0.3078,-0.0051,False
+emotion,0.2961,0.2951,-0.001,False

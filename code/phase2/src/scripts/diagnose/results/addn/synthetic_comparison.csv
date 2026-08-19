@@ -1,0 +1,7 @@
+head,real_only_eval_real_test_f1,real_plus_synth_eval_real_test_f1,delta_on_real_test,real_only_eval_all_test_f1,real_plus_synth_eval_all_test_f1,delta_on_all_test
+domain,1.0,1.0,0.0,1.0,1.0,0.0
+subdomain,0.4628,0.5086,0.0458,0.4628,0.5086,0.0458
+intent,0.3838,0.3623,-0.0215,0.3838,0.3623,-0.0215
+entity_type,0.2513,0.2782,0.0269,0.2513,0.2782,0.0269
+urgency,0.273,0.3129,0.0399,0.273,0.3129,0.0399
+emotion,0.2656,0.2961,0.0305,0.2656,0.2961,0.0305

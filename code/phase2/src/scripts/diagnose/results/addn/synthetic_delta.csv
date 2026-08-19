@@ -1,0 +1,7 @@
+head,delta_on_real_speech,synthetic_effect_on_real_speech
+domain,0.0,NEUTRAL
+subdomain,0.0458,HELPFUL
+intent,-0.0215,NEUTRAL
+entity_type,0.0269,NEUTRAL
+urgency,0.0399,HELPFUL
+emotion,0.0305,HELPFUL
