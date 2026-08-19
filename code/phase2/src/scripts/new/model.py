@@ -19,12 +19,7 @@ class ASILNLU(nn.Module):
                 nn.Linear(Config.FUSION_DIM, 1, bias=False)
             )
         
-        self.whisper_proj = nn.Sequential(
-            nn.Linear(Config.WHISPER_DIM, Config.FUSION_DIM),
-            nn.LayerNorm(Config.FUSION_DIM),
-            nn.GELU(),
-            nn.Dropout(Config.DROPOUT)
-        )
+        self.whisper_proj = nn.Sequential(nn.Linear(Config.WHISPER_DIM, 512),nn.LayerNorm(512),nn.GELU(),nn.Dropout(0.2),nn.Linear(512, Config.FUSION_DIM),nn.GELU(),nn.Dropout(0.2))
         
         # HuBERT Acoustic Projector
         if self.use_acoustic:
@@ -45,12 +40,7 @@ class ASILNLU(nn.Module):
             
         self.heads = nn.ModuleDict()
         for head, num_classes in label_counts.items():
-            self.heads[head] = nn.Sequential(
-                nn.Linear(Config.FUSION_DIM, Config.HEAD_HIDDEN_DIM),
-                nn.GELU(),
-                nn.Dropout(Config.DROPOUT),
-                nn.Linear(Config.HEAD_HIDDEN_DIM, num_classes)
-            )
+            self.heads[head] = nn.Linear(Config.FUSION_DIM, num_classes)
             
     def forward(self, whisper_x, acoustic_x=None):
         # 1. Process Semantic Branch
@@ -85,17 +75,3 @@ def get_label_counts():
         with open(os.path.join(Config.ROOT_DIR, "results", "label_maps", f"{head}.json"), "r") as f:
             counts[head] = len(json.load(f)) - 1 # Exclude MASK
     return counts
-
-"""
-
-self.whisper_proj = nn.Sequential(
-    nn.Linear(Config.WHISPER_DIM, 512),
-    nn.LayerNorm(512),
-    nn.GELU(),
-    nn.Dropout(0.2),
-    nn.Linear(512, Config.FUSION_DIM),
-    nn.GELU(),
-    nn.Dropout(0.2)
-)
-self.heads[head] = nn.Linear(Config.FUSION_DIM, num_classes)
-"""
