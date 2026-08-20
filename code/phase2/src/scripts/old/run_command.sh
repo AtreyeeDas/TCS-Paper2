@@ -2,9 +2,17 @@
 # Exit immediately if any command fails
 set -e
 
+# ============================================================
+# 1. ACTIVATE CONDA ENVIRONMENT
+# ============================================================
+# Adjust 'asil_nlu' to your actual environment name if different
+source ~/miniconda3/etc/profile.d/conda.sh || source ~/anaconda3/etc/profile.d/conda.sh
+conda activate asil_nlu
+
 echo "============================================================"
 echo "          RESUMING STAGE 5 (FAST ASSIGNMENT)                "
 echo "============================================================"
+# It will automatically find the .jsonl checkpoint and resume!
 python relabel_pipeline.py --stage 5
 
 echo "============================================================"
