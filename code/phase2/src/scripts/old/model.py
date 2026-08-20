@@ -1,7 +1,5 @@
 import torch
 import torch.nn as nn
-import json
-import os
 from config import Config
 
 class ASILNLU(nn.Module):
@@ -44,10 +42,3 @@ class ASILNLU(nn.Module):
             outputs[head_name] = layer(shared_rep)
             
         return outputs
-
-def get_label_counts():
-    counts = {}
-    for head in Config.HEADS:
-        with open(os.path.join(Config.ROOT_DIR, "results", "label_maps", f"{head}.json"), "r") as f:
-            counts[head] = len(json.load(f)) - 1 # Exclude MASK
-    return counts
