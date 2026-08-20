@@ -326,6 +326,8 @@ Return ONLY valid JSON: {{"selected_class": "EXACT_APPROVED_CLASS_NAME", "reason
             raise FileNotFoundError(f"Missing {len(missing_files)} Whisper embeddings! Ensure {Config.WHISPER_EMB_DIR} is populated with 'sample_X.npz' files. First missing: {missing_files[:5]}")
             
         whisper_embs = np.array(whisper_embs)
+        if whisper_embs.ndim > 2:
+                whisper_embs=whisper_embs.reshape(whisper_embs.shape[0],-1)
         if whisper_embs.shape[1] != 1280:
             logging.warning(f"Unexpected dimension: {whisper_embs.shape[1]} (Expected 1280 for Whisper-large-v3-turbo). Proceeding...")
 
@@ -336,7 +338,7 @@ Return ONLY valid JSON: {{"selected_class": "EXACT_APPROVED_CLASS_NAME", "reason
             col = f"canonical_{head}"
             if col not in df.columns: continue
             
-            valid_idx = ~df[col].isin(["OUTLIER_REVIEW", "MASK"])
+            valid_idx = df[col].notna() & ~df[col].isin(["OUTLIER_REVIEW", "MASK"])
             X = whisper_embs[valid_idx]
             y = df.loc[valid_idx, col].values
             
