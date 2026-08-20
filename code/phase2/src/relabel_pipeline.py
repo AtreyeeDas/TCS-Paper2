@@ -156,7 +156,8 @@ class RelabelPipeline:
             "gemma_adjudicated_count": 0,
             "invalid_llm_fallback_count": 0,
             "mask_count": 0,
-            "per_head": {h: {"fast": 0, "gemma": 0, "fallback": 0, "mask": 0} for h in class_prototypes.keys()}
+            "outliers_count": 0,
+            "per_head": {h: {"fast": 0, "gemma": 0, "fallback": 0, "mask": 0, "outlier": 0} for h in class_prototypes.keys()}
         }
 
         start_time = time.time()
@@ -183,16 +184,36 @@ class RelabelPipeline:
                         continue
 
                     sims = all_sims[head][i]
-                    top_2_idx = np.argsort(sims)[-2:][::-1]
-                    idx1, idx2 = top_2_idx[0], top_2_idx[1]
-                    sim1, sim2 = sims[idx1], sims[idx2]
-                    margin = sim1 - sim2
+                    n_classes = len(sims)
                     
-                    class1 = class_prototypes[head]["names"][idx1]
-                    class2 = class_prototypes[head]["names"][idx2]
+                    if n_classes == 0:
+                        continue
+                        
+                    # BUG FIX: Handle heads with only 1 class
+                    if n_classes == 1:
+                        idx1 = 0
+                        sim1 = sims[idx1]
+                        margin = 1.0 # No competitor means 100% margin
+                        class1 = class_prototypes[head]["names"][idx1]
+                        class2 = None
+                    else:
+                        top_2_idx = np.argsort(sims)[-2:][::-1]
+                        idx1, idx2 = top_2_idx[0], top_2_idx[1]
+                        sim1, sim2 = sims[idx1], sims[idx2]
+                        margin = sim1 - sim2
+                        class1 = class_prototypes[head]["names"][idx1]
+                        class2 = class_prototypes[head]["names"][idx2]
                     
                     row_dict[f"{head}_similarity"] = float(sim1)
                     row_dict[f"{head}_margin"] = float(margin)
+
+                    # Explicit Outlier Check
+                    if sim1 < 0.20:
+                        row_dict[f"canonical_{head}"] = "OUTLIER_REVIEW"
+                        row_dict[f"{head}_status"] = "OUTLIER"
+                        assignment_stats["outliers_count"] += 1
+                        assignment_stats["per_head"][head]["outlier"] += 1
+                        continue
 
                     # 2. Fast Path
                     if sim1 >= Config.ASSIGNMENT_SIMILARITY_THRESHOLD and margin >= Config.ASSIGNMENT_MARGIN_THRESHOLD:
@@ -202,10 +223,17 @@ class RelabelPipeline:
                         assignment_stats["per_head"][head]["fast"] += 1
                     else:
                         # 3. Gemma Adjudication
-                        if llm is None: llm = LLMManager() # Load Gemma only on first slow-path
-                        
-                        prompt = f"""Choose exactly one of these already-approved classes according to the definitions and acceptance/rejection criteria. Do not invent, rename, merge, or create a class.
-                        
+                        if n_classes == 1:
+                            # Edge case: If there is only 1 class, don't ask Gemma to decide between Candidate 1 and None.
+                            row_dict[f"canonical_{head}"] = class1
+                            row_dict[f"{head}_status"] = "FAST_PATH"
+                            assignment_stats["fast_path_count"] += 1
+                            assignment_stats["per_head"][head]["fast"] += 1
+                        else:
+                            if llm is None: llm = LLMManager() # Load Gemma only on first slow-path
+                            
+                            prompt = f"""Choose exactly one of these already-approved classes according to the definitions and acceptance/rejection criteria. Do not invent, rename, merge, or create a class.
+                            
 Transcript: "{row_data['transcript']}"
 Head: {head}
 
@@ -220,21 +248,21 @@ Positive: {class_prototypes[head]['pos'][idx2]}
 Negative: {class_prototypes[head]['neg'][idx2]}
 
 Return ONLY valid JSON: {{"selected_class": "EXACT_APPROVED_CLASS_NAME", "reason": "brief reason"}}"""
-                        
-                        res = llm.query_json(prompt)
-                        selected = res.get("selected_class", "").strip()
-                        
-                        # Authoritative Validation
-                        if selected in allowed_classes[head]:
-                            row_dict[f"canonical_{head}"] = selected
-                            row_dict[f"{head}_status"] = "GEMMA_ADJUDICATED"
-                            assignment_stats["gemma_adjudicated_count"] += 1
-                            assignment_stats["per_head"][head]["gemma"] += 1
-                        else:
-                            row_dict[f"canonical_{head}"] = class1 # Fallback to mathematical best
-                            row_dict[f"{head}_status"] = "INVALID_LLM_FALLBACK"
-                            assignment_stats["invalid_llm_fallback_count"] += 1
-                            assignment_stats["per_head"][head]["fallback"] += 1
+                            
+                            res = llm.query_json(prompt)
+                            selected = res.get("selected_class", "").strip()
+                            
+                            # Authoritative Validation
+                            if selected in allowed_classes[head]:
+                                row_dict[f"canonical_{head}"] = selected
+                                row_dict[f"{head}_status"] = "GEMMA_ADJUDICATED"
+                                assignment_stats["gemma_adjudicated_count"] += 1
+                                assignment_stats["per_head"][head]["gemma"] += 1
+                            else:
+                                row_dict[f"canonical_{head}"] = class1 # Fallback to mathematical best
+                                row_dict[f"{head}_status"] = "INVALID_LLM_FALLBACK"
+                                assignment_stats["invalid_llm_fallback_count"] += 1
+                                assignment_stats["per_head"][head]["fallback"] += 1
 
                 ckpt_file.write(json.dumps(row_dict) + "\n")
                 ckpt_file.flush()
@@ -298,7 +326,7 @@ Return ONLY valid JSON: {{"selected_class": "EXACT_APPROVED_CLASS_NAME", "reason
             col = f"canonical_{head}"
             if col not in df.columns: continue
             
-            valid_idx = df[col] != "MASK"
+            valid_idx = ~df[col].isin(["OUTLIER_REVIEW", "MASK"])
             X = whisper_embs[valid_idx]
             y = df.loc[valid_idx, col].values
             
