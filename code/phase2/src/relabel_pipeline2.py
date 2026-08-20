@@ -303,20 +303,27 @@ Return ONLY valid JSON: {{"selected_class": "EXACT_APPROVED_CLASS_NAME", "reason
         
         df = pd.read_csv(os.path.join(Config.OUTPUT_DIR, "master_nlu_dataset_relabelled.csv"))
         
-        # 1. Explicit Check for Frozen Whisper Embeddings
+        # 1. Explicit Check for Frozen Whisper Embeddings (REWRITTEN FOR INDEX-BASED NPZ FILES)
         missing_files = []
         whisper_embs = []
         
-        for path in tqdm(df["audio_path"], desc="Loading Attention-Pool Features"):
-            base = os.path.basename(path).replace(".wav", ".npz")
-            npz_path = os.path.join(Config.WHISPER_EMB_DIR, base)
-            if not os.path.exists(npz_path):
-                missing_files.append(npz_path)
+        for idx in tqdm(range(len(df)), desc="Loading Attention-Pool Features"):
+            # Check for sequential naming formats (e.g., sample_4681.npz, sample_04681.npz)
+            path_standard = os.path.join(Config.WHISPER_EMB_DIR, f"sample_{idx}.npz")
+            path_padded_4 = os.path.join(Config.WHISPER_EMB_DIR, f"sample_{idx:04d}.npz")
+            path_padded_5 = os.path.join(Config.WHISPER_EMB_DIR, f"sample_{idx:05d}.npz")
+            
+            if os.path.exists(path_standard):
+                whisper_embs.append(np.load(path_standard)['embedding'])
+            elif os.path.exists(path_padded_4):
+                whisper_embs.append(np.load(path_padded_4)['embedding'])
+            elif os.path.exists(path_padded_5):
+                whisper_embs.append(np.load(path_padded_5)['embedding'])
             else:
-                whisper_embs.append(np.load(npz_path)['embedding'])
+                missing_files.append(f"Row {idx} (Looked for {path_standard} and padded variants)")
 
         if missing_files:
-            raise FileNotFoundError(f"Missing {len(missing_files)} Whisper embeddings! Ensure {Config.WHISPER_EMB_DIR} is populated. First missing: {missing_files[:5]}")
+            raise FileNotFoundError(f"Missing {len(missing_files)} Whisper embeddings! Ensure {Config.WHISPER_EMB_DIR} is populated with 'sample_X.npz' files. First missing: {missing_files[:5]}")
             
         whisper_embs = np.array(whisper_embs)
         if whisper_embs.shape[1] != 1280:
