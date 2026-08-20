@@ -1,0 +1,214 @@
+[
+  {
+    "head": "domain",
+    "canonical_name": "DOMAIN",
+    "definition": "The broad subject area or domain of the utterance.",
+    "positive_criteria": [
+      "The utterance is primarily about a recognizable subject area, field, industry, or topic."
+    ],
+    "negative_criteria": [
+      "Do not create a separate domain merely because a geographical location, person, or generic information request is mentioned."
+    ]
+  },
+
+  {
+    "head": "subdomain",
+    "canonical_name": "SUBDOMAIN",
+    "definition": "The more specific topic or operational area within the broader domain.",
+    "positive_criteria": [
+      "The utterance identifies a specific specialized topic, operational area, or branch of the broader domain."
+    ],
+    "negative_criteria": [
+      "Do not create a separate subdomain for generic questions, locations, conversational filler, or isolated entities."
+    ]
+  },
+
+  {
+    "head": "intent",
+    "canonical_name": "GENERAL_CONVERSATIONAL_RESPONSE",
+    "definition": "Conversational, social, expressive, or reactive utterances that do not primarily request information or an action.",
+    "positive_criteria": [
+      "Social commentary, agreement, disagreement, reaction, enthusiasm, or conversational response."
+    ],
+    "negative_criteria": [
+      "Do not use for explicit information requests or domain-specific requests."
+    ]
+  },
+
+  {
+    "head": "intent",
+    "canonical_name": "GENERAL_INFORMATION_QUERY",
+    "definition": "A request for factual information, explanation, definition, or clarification without a more specific operational intent.",
+    "positive_criteria": [
+      "Questions asking what, why, how, when, or similar factual information.",
+      "Requests for definitions, explanations, dates, locations, or general knowledge."
+    ],
+    "negative_criteria": [
+      "Do not use when the utterance has a clearly identifiable medical or financial reporting intent."
+    ]
+  },
+
+  {
+    "head": "intent",
+    "canonical_name": "FINANCIAL_REPORTING_OR_ANALYSIS",
+    "definition": "A request or discussion concerning financial performance, reporting, business results, metrics, outlook, or financial analysis.",
+    "positive_criteria": [
+      "Revenue, earnings, costs, margins, financial results, market share, financial outlook, business performance, or related analysis."
+    ],
+    "negative_criteria": [
+      "Do not use for generic conversation unrelated to financial performance."
+    ]
+  },
+
+  {
+    "head": "intent",
+    "canonical_name": "MEDICAL_QUERY",
+    "definition": "A request, concern, or report concerning symptoms, medical conditions, diagnosis, treatment, or health-related guidance.",
+    "positive_criteria": [
+      "Symptoms, medical conditions, diagnosis, treatment, medical advice, or acute health events."
+    ],
+    "negative_criteria": [
+      "Do not use for non-medical general information."
+    ]
+  },
+
+  {
+    "head": "entity_type",
+    "canonical_name": "COMPANY",
+    "definition": "A business organization or corporate entity being discussed.",
+    "positive_criteria": [
+      "A named company or organization is the principal entity under discussion."
+    ],
+    "negative_criteria": [
+      "Do not use for generic financial concepts without an organization."
+    ]
+  },
+
+  {
+    "head": "entity_type",
+    "canonical_name": "MEDICAL_CONDITION",
+    "definition": "A disease, symptom, injury, physiological abnormality, or other medical condition being discussed.",
+    "positive_criteria": [
+      "Named diseases, symptoms, injuries, medical abnormalities, or clinically relevant conditions."
+    ],
+    "negative_criteria": [
+      "Do not use for purely administrative or non-medical statements."
+    ]
+  },
+
+  {
+    "head": "entity_type",
+    "canonical_name": "GENERAL_ENTITY",
+    "definition": "A relevant person, location, material, object, or other identifiable entity that does not belong to a more specific entity class.",
+    "positive_criteria": [
+      "People, locations, materials, objects, or other identifiable entities."
+    ],
+    "negative_criteria": [
+      "Do not use when COMPANY or MEDICAL_CONDITION is clearly applicable."
+    ]
+  },
+
+  {
+    "head": "urgency",
+    "canonical_name": "LOW",
+    "definition": "The situation does not require prompt action.",
+    "positive_criteria": [
+      "Routine, non-time-sensitive situations."
+    ],
+    "negative_criteria": [
+      "No immediate consequence or rapidly developing risk."
+    ]
+  },
+
+  {
+    "head": "urgency",
+    "canonical_name": "MEDIUM",
+    "definition": "The situation deserves attention but does not require immediate intervention.",
+    "positive_criteria": [
+      "Important but reasonably manageable situations."
+    ],
+    "negative_criteria": [
+      "Do not use when immediate or severe consequences are clearly present."
+    ]
+  },
+
+  {
+    "head": "urgency",
+    "canonical_name": "HIGH",
+    "definition": "The situation requires prompt attention or action because delay may cause significant consequences.",
+    "positive_criteria": [
+      "Time-sensitive situations requiring prompt intervention."
+    ],
+    "negative_criteria": [
+      "Do not use merely because the speaker uses words such as urgent without substantive evidence of time sensitivity."
+    ]
+  },
+
+  {
+    "head": "urgency",
+    "canonical_name": "CRITICAL",
+    "definition": "The situation involves an immediate severe threat or consequence requiring immediate intervention.",
+    "positive_criteria": [
+      "Immediate danger to life, safety, critical operations, or severe irreversible consequences."
+    ],
+    "negative_criteria": [
+      "Do not use solely because an utterance contains emotional or emphatic language."
+    ]
+  },
+
+  {
+    "head": "emotion",
+    "canonical_name": "ANGER",
+    "definition": "Anger, irritation, hostility, or frustration.",
+    "positive_criteria": ["Angry or hostile affect."],
+    "negative_criteria": ["Do not infer anger solely from urgency."]
+  },
+
+  {
+    "head": "emotion",
+    "canonical_name": "DISGUST",
+    "definition": "Disgust or strong aversion.",
+    "positive_criteria": ["Expressions of disgust or aversion."],
+    "negative_criteria": ["Do not infer disgust solely from negative content."]
+  },
+
+  {
+    "head": "emotion",
+    "canonical_name": "FEAR",
+    "definition": "Fear, anxiety, apprehension, or alarm.",
+    "positive_criteria": ["Fearful or anxious affect."],
+    "negative_criteria": ["Do not infer fear solely from a critical situation."]
+  },
+
+  {
+    "head": "emotion",
+    "canonical_name": "JOY",
+    "definition": "Happiness, pleasure, excitement, or positive affect.",
+    "positive_criteria": ["Clearly positive or joyful affect."],
+    "negative_criteria": ["Do not infer joy solely from positive words."]
+  },
+
+  {
+    "head": "emotion",
+    "canonical_name": "NEUTRAL",
+    "definition": "Emotionally neutral or minimally expressive affect.",
+    "positive_criteria": ["Little or no detectable emotional expression."],
+    "negative_criteria": ["Do not use when a clear emotional state is present."]
+  },
+
+  {
+    "head": "emotion",
+    "canonical_name": "SADNESS",
+    "definition": "Sadness, sorrow, grief, or depressed affect.",
+    "positive_criteria": ["Clearly sad or sorrowful affect."],
+    "negative_criteria": ["Do not infer sadness solely from negative information."]
+  },
+
+  {
+    "head": "emotion",
+    "canonical_name": "SURPRISE",
+    "definition": "Surprise, astonishment, or unexpected reaction.",
+    "positive_criteria": ["Clearly surprised or astonished affect."],
+    "negative_criteria": ["Do not infer surprise merely because an event is unusual."]
+  }
+]
