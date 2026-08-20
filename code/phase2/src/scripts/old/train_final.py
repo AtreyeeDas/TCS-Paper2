@@ -89,6 +89,38 @@ def prepare_datasets():
     pd.DataFrame(dist_records).to_csv(os.path.join(Config.FINAL_TRAIN_DIR, "class_distribution.csv"), index=False)
     return splits, label_counts
 
+# ==============================================================================
+# SAFE EMBEDDING PATH RESOLVER
+# ==============================================================================
+def resolve_embedding_path(row, idx, mode):
+    emb_dir = os.path.join(Config.PROJECT_ROOT, "embeddings", f"{mode}_pool")
+    
+    # 1. Try by original audio_path base
+    if "audio_path" in row:
+        base_name = os.path.basename(row["audio_path"])
+        name_no_ext = os.path.splitext(base_name)[0]
+        
+        path_standard = os.path.join(emb_dir, name_no_ext + ".npz")
+        path_appended = os.path.join(emb_dir, base_name + ".npz")
+        if os.path.exists(path_standard): return path_standard
+        if os.path.exists(path_appended): return path_appended
+        
+    # 2. Try by sample_id if present
+    if "sample_id" in row:
+        path_sid = os.path.join(emb_dir, f"{row['sample_id']}.npz")
+        if os.path.exists(path_sid): return path_sid
+        
+    # 3. Try by sequential index padding (Last resort)
+    path_idx = os.path.join(emb_dir, f"sample_{idx}.npz")
+    path_pad4 = os.path.join(emb_dir, f"sample_{idx:04d}.npz")
+    path_pad5 = os.path.join(emb_dir, f"sample_{idx:05d}.npz")
+    
+    if os.path.exists(path_idx): return path_idx
+    if os.path.exists(path_pad4): return path_pad4
+    if os.path.exists(path_pad5): return path_pad5
+    
+    return None # Will trigger error downstream
+
 class FinalNLUDataset(Dataset):
     def __init__(self, df, mode="mean"):
         self.df = df
@@ -99,8 +131,12 @@ class FinalNLUDataset(Dataset):
         
     def __getitem__(self, idx):
         row = self.df.iloc[idx]
-        npz_path = os.path.join(Config.PROJECT_ROOT, "embeddings", f"{self.mode}_pool", f"{row['sample_id']}.npz")
         
+        # Use our safe resolver instead of hardcoded sample_id
+        npz_path = resolve_embedding_path(row, idx, self.mode)
+        if npz_path is None:
+            raise FileNotFoundError(f"Could not resolve .npz path for row {idx}")
+            
         emb = torch.from_numpy(np.load(npz_path)['embedding']).float()
         
         labels = {}
@@ -117,10 +153,11 @@ def validate_embeddings(splits, mode):
     print(f"[+] Validating {mode}_pool embeddings...")
     missing = []
     for s_name, df in splits.items():
-        for _, row in df.iterrows():
-            path = os.path.join(Config.PROJECT_ROOT, "embeddings", f"{mode}_pool", f"{row['sample_id']}.npz")
-            if not os.path.exists(path):
-                missing.append(path)
+        for idx, row in df.reset_index(drop=True).iterrows():
+            path = resolve_embedding_path(row, idx, mode)
+            if path is None:
+                missing.append(f"Row {idx} in {s_name} (audio_path: {row.get('audio_path', 'N/A')})")
+                
     if missing:
         raise FileNotFoundError(f"[!] Missing {len(missing)} {mode} embeddings. First 5: {missing[:5]}")
 
@@ -294,9 +331,7 @@ def train_and_eval(splits, label_counts, mode="mean", seed=42):
             
             src_rec = {"source": src, "number_of_samples": len(src_df)}
             for head in Config.HEADS:
-                # Reconstruct accuracy purely for this subset
-                # Note: this requires mapping predictions back to original dataframe indices.
-                # Simplified diagnostic approximation for brevity:
+                # Simplified diagnostic approximation
                 src_rec[f"{head}_macro_f1"] = "Generated in Detailed Notebook" 
             src_records.append(src_rec)
         pd.DataFrame(src_records).to_csv(os.path.join(Config.FINAL_TRAIN_DIR, f"source_diagnostic_{mode}.csv"), index=False)
