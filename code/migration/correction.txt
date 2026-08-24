@@ -1,1 +1,11 @@
 wget https://openaipublic.azureedge.net/main/whisper/models/25a8566e1d0c1e2231d1c762132cd20e0f96a85d16145c3a00adf5d1ac670ead/base.en.pt -P /home/spark2/Models/
+conda deactivate
+conda remove -n asil_nlu --all -y
+
+# Force Conda to pull standard linux-64 packages to avoid CUDA resolution errors
+CONDA_SUBDIR=linux-64 conda create -n asil_nlu python=3.11 "numpy<2.0.0" scikit-learn=1.6.1 -c conda-forge -y
+
+conda activate asil_nlu
+conda config --env --set subdir linux-64
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130
+pip install openai-whisper sentence-transformers pandas joblib soundfile librosa tqdm
