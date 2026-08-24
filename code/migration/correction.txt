@@ -9,3 +9,16 @@ conda activate asil_nlu
 conda config --env --set subdir linux-64
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130
 pip install openai-whisper sentence-transformers pandas joblib soundfile librosa tqdm
+
+
+
+# Deactivate current environment
+conda deactivate
+
+# Create the fresh, locked environment
+conda create -n asil_nlu_v2 python=3.11 -y
+conda activate asil_nlu_v2
+
+# Install the strictly pinned requirements
+pip install -r requirements_pinned.txt
+python verify_deployment.py
