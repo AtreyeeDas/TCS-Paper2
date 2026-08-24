@@ -2,11 +2,10 @@ torch>=2.2.0
 torchaudio>=2.2.0
 transformers==4.40.0
 sentence-transformers
-scikit-learn
-pandas
-numpy<2.0.0
+scikit-learn==1.6.1
+numpy==1.26.4
+joblib==1.4.2
 librosa
 soundfile
 tqdm
-joblib
 openai-whisper
