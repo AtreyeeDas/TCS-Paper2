@@ -22,3 +22,7 @@ conda activate asil_nlu_v2
 # Install the strictly pinned requirements
 pip install -r requirements_pinned.txt
 python verify_deployment.py
+
+
+pip install --pre torch torchaudio --index-url https://download.pytorch.org/whl/nightly/cu130
+
