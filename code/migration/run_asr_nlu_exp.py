@@ -11,9 +11,9 @@ import jiwer
 # CONFIGURATION
 # ---------------------------------------------------------
 WHISPER_MODEL_PATH = "/home/spark2/Models/base.en.pt"
-DATASET_CSV = "dataset/nlu_robust_6000_scenario_paraphrase.csv"
-AUDIO_DIR = "audio"
-ASR_DIR = "asr"
+DATASET_CSV = "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/dataset/nlu_robust_6000_scenario_paraphrase.csv"
+AUDIO_DIR = "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/audio"
+ASR_DIR = "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/asr"
 JSON_DIR = os.path.join(ASR_DIR, "json")
 PROGRESS_FILE = os.path.join(ASR_DIR, "whisper_decode_progress.json")
 OUTPUT_CSV = os.path.join(ASR_DIR, "whisper_transcripts_6000.csv")
