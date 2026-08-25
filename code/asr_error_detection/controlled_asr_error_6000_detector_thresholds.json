@@ -1,0 +1,6 @@
+{
+    "dataset_evaluated": "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/dataset/controlled_asr_error_6000.csv",
+    "rule_based_disagreement_threshold": 0.05,
+    "detector_A_optimal_threshold": 0.1,
+    "detector_B_optimal_threshold": 0.4
+}
