@@ -1,0 +1,8 @@
+domain,error_type,rows,mean_WER,mean_S,mean_D,mean_I
+finance,domain_term_phonetic_semantic_substitution,1250,0.03108396631814461,1.0,0.0,0.0
+general,domain_term_deletion,5,0.04740378614520491,0.0,1.0,0.0
+general,domain_term_phonetic_semantic_substitution,995,0.04318055246835263,1.0,0.0,0.0
+legal,domain_term_phonetic_semantic_substitution,1250,0.031636331785151024,1.0,0.0,0.0
+medical,domain_term_phonetic_semantic_substitution,1880,0.03180200098977927,1.0,0.0,0.0
+technology,domain_term_deletion,27,0.029810145785555915,0.0,1.0,0.0
+technology,domain_term_phonetic_semantic_substitution,593,0.032048912358890645,1.0,0.0,0.0
