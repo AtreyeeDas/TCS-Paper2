@@ -1,0 +1,61 @@
+================================================================================
+ASR -> NLU SEMANTIC INCONSISTENCY ERROR DETECTION EXPERIMENT
+Target Dataset: controlled_asr_error_6000
+================================================================================
+
+[+] Loading dataset from: /home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/dataset/controlled_asr_error_6000.csv
+
+[+] Loading CACHED Voice-NLU Inference from: /home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/error_detector/voice_nlu_cache.joblib
+
+================================================================================
+SCIENTIFIC CAVEAT:
+The Voice-NLU semantic hypothesis is obtained by forward inference using the trained
+Voice-NLU models on the same semantic embedding set used during Voice-NLU training.
+This makes the audio-side reference potentially optimistic and is treated as an
+audio-grounded reference hypothesis, not as an independent ground-truth oracle.
+================================================================================
+
+[+] Initializing Text-NLU Forward Inference...
+[Text-NLU] Loading local text encoder from: /home/spark2/Models/all-MiniLM-L6-v2 on cuda...
+
+[+] Running Text-NLU on Clean Reference Transcripts (A)...
+
+[+] Running Text-NLU on Erroneous/Target Transcripts (B)...
+
+================================================================================
+STEP 1: SEMANTIC INCONSISTENCY DIAGNOSTIC
+================================================================================
+
+--- Target Transcripts vs Voice-NLU ---
+Domain Mismatch Rate        : 0.42%
+Subdomain Mismatch Rate     : 7.53%
+Topic Mismatch Rate         : 19.88%
+Document-Type Mismatch Rate : 18.18%
+At Least 1 Mismatch         : 26.63%
+
+================================================================================
+STEPS 2-4: EXTRACTING IN-MEMORY DETECTOR FEATURES
+================================================================================
+
+================================================================================
+STEP 7: TUNING RULE-BASED BASELINE ON VALIDATION
+================================================================================
+[Rule-Based] Optimal threshold on Validation: 0.05 (Val F1 = 0.4546)
+
+================================================================================
+STEP 5: TRAINING DETECTOR A & DETECTOR B
+================================================================================
+
+        Split                      Method  Accuracy  Precision   Recall       F1  ROC-AUC  TP  TN  FP  FN
+Unseen (Test)     Rule-based Disagreement  0.601111   0.669145 0.400000 0.500695 0.609343 360 722 178 540
+Unseen (Test)   Detector A (No Posterior)  0.500000   0.500000 1.000000 0.666667 0.612549 900   0 900   0
+Unseen (Test) Detector B (With Posterior)  0.664444   0.619741 0.851111 0.717228 0.757522 766 430 470 134
+
+================================================================================
+STEP 12: SAVING TRAINED DETECTOR MODELS & THRESHOLDS
+================================================================================
+[✓] Saved Detector A Pipeline : /home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/error_detector/controlled_asr_error_6000_detector_without_posterior.joblib
+[✓] Saved Detector B Pipeline : /home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/error_detector/controlled_asr_error_6000_detector_with_posterior.joblib
+[✓] Saved Detector Thresholds : /home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/error_detector/controlled_asr_error_6000_detector_thresholds.json
+
+[✓] ALL DONE! Voice-NLU cache generated successfully and outputs saved distinctly.
