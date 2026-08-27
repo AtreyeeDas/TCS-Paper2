@@ -13,3 +13,119 @@ Traceback (most recent call last):
     fa_0, fb_0 = extract_baseline_features(v_row, c_row, v_post, c_post, voice_encoders, self.text_engine.encoders)
                                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'NoneType' object has no attribute 'encoders'
+I see exactly what is happening here! This is a classic caching bug.
+The Cause
+Because you ran the script previously and it successfully cached the Text-NLU inferences, the pipeline is smartly loading those saved results from disk to save time. However, by skipping the Text-NLU forward inference step, the script never initializes the self.text_engine object.
+Later in the loop, when it tries to extract features and requests self.text_engine.encoders, the object is None, which immediately triggers the AttributeError.
+The Fix
+Instead of forcing the engine to initialize (which takes time), we just need to load the text_encoders directly from your saved artifacts so they are always available regardless of whether the cache is used.
+Open your run_master_exp.py file and make these two quick replacements.
+Fix 1: Update stage_01_controlled_baseline
+Scroll down to Stage 01 (around line 300) and find where the inferences are loaded:
+Find this block:
+        voice_df, voice_posteriors, voice_sample_to_idx, voice_encoders = self.get_voice_nlu_inference()
+        clean_text_df, clean_posteriors = self.get_text_nlu_inference(
+            ctrl_df["reference_transcript"].astype(str).tolist(), "controlled_clean_text"
+        )
+        err_text_df, err_posteriors = self.get_text_nlu_inference(
+            ctrl_df["controlled_transcript"].astype(str).tolist(), "controlled_error_text"
+        )
+
+Add the direct encoder load right below it, and update the loop to use it:
+        voice_df, voice_posteriors, voice_sample_to_idx, voice_encoders = self.get_voice_nlu_inference()
+        clean_text_df, clean_posteriors = self.get_text_nlu_inference(
+            ctrl_df["reference_transcript"].astype(str).tolist(), "controlled_clean_text"
+        )
+        err_text_df, err_posteriors = self.get_text_nlu_inference(
+            ctrl_df["controlled_transcript"].astype(str).tolist(), "controlled_error_text"
+        )
+
+        # FIX: Directly load text encoders to bypass the missing engine object
+        text_encoders = joblib.load(TEXT_LABEL_ENCODERS)
+
+        rows_meta, rows_fa, rows_fb, targets = [], [], [], []
+        for i in range(len(ctrl_df)):
+            sid = ctrl_df.iloc[i]["sample_id"]
+            scen_id = ctrl_df.iloc[i]["scenario_id"]
+            split = ctrl_df.iloc[i]["split"]
+            v_idx = voice_sample_to_idx[sid]
+
+            v_row = voice_df.iloc[v_idx]
+            v_post = {h: voice_posteriors[h][v_idx] for h in HEADS}
+
+            # Observation 0: Clean
+            c_row = clean_text_df.iloc[i]
+            c_post = {h: clean_posteriors[h][i] for h in HEADS}
+            fa_0, fb_0 = extract_baseline_features(v_row, c_row, v_post, c_post, voice_encoders, text_encoders)
+            rows_meta.append({"sample_id": sid, "scenario_id": scen_id, "split": split, "is_error": 0})
+            rows_fa.append(fa_0)
+            rows_fb.append(fb_0)
+            targets.append(0)
+
+            # Observation 1: Controlled Error
+            e_row = err_text_df.iloc[i]
+            e_post = {h: err_posteriors[h][i] for h in HEADS}
+            fa_1, fb_1 = extract_baseline_features(v_row, e_row, v_post, e_post, voice_encoders, text_encoders)
+            rows_meta.append({"sample_id": sid, "scenario_id": scen_id, "split": split, "is_error": 1})
+            rows_fa.append(fa_1)
+            rows_fb.append(fb_1)
+            targets.append(1)
+
+Fix 2: Update run_real_whisper_suite
+You will need to do the exact same thing for the real Whisper experiment. Scroll down to run_real_whisper_suite (around line 380).
+Find this block:
+        voice_df, voice_posteriors, voice_sample_to_idx, voice_encoders = self.get_voice_nlu_inference()
+        clean_text_df, clean_posteriors = self.get_text_nlu_inference(
+            real_df["clean_whisper_transcript"].astype(str).tolist(), "whisper_clean_text"
+        )
+        corr_text_df, corr_posteriors = self.get_text_nlu_inference(
+            real_df["corrupted_whisper_transcript"].astype(str).tolist(), "whisper_corrupted_text"
+        )
+
+Add the direct encoder load and update the feature extraction calls:
+        voice_df, voice_posteriors, voice_sample_to_idx, voice_encoders = self.get_voice_nlu_inference()
+        clean_text_df, clean_posteriors = self.get_text_nlu_inference(
+            real_df["clean_whisper_transcript"].astype(str).tolist(), "whisper_clean_text"
+        )
+        corr_text_df, corr_posteriors = self.get_text_nlu_inference(
+            real_df["corrupted_whisper_transcript"].astype(str).tolist(), "whisper_corrupted_text"
+        )
+
+        # FIX: Directly load text encoders
+        text_encoders = joblib.load(TEXT_LABEL_ENCODERS)
+
+        y_real = (real_df["targets_corrupted"] > 0).astype(int).values
+        train_mask = (real_df["split"] == "train").values
+        val_mask = (real_df["split"] == "validation").values
+        unseen_mask = (real_df["split"] == "unseen").values
+        y_val = y_real[val_mask]
+        y_unseen = y_real[unseen_mask]
+
+        rows_fa_corr, rows_fb_corr = [], []
+        rows_fb_clean = []
+        rows_disp, rows_delta, rows_hier = [], [], []
+
+        for i in range(len(real_df)):
+            sid = real_df.iloc[i]["sample_id"]
+            v_idx = voice_sample_to_idx[sid]
+            v_row = voice_df.iloc[v_idx]
+            v_post = {h: voice_posteriors[h][v_idx] for h in HEADS}
+
+            # Voice <-> Corrupted Text
+            te_row = corr_text_df.iloc[i]
+            te_post = {h: corr_posteriors[h][i] for h in HEADS}
+            fa_e, fb_e = extract_baseline_features(v_row, te_row, v_post, te_post, voice_encoders, text_encoders)
+            rows_fa_corr.append(fa_e)
+            rows_fb_corr.append(fb_e)
+
+            # Voice <-> Clean Text
+            tc_row = clean_text_df.iloc[i]
+            tc_post = {h: clean_posteriors[h][i] for h in HEADS}
+            _, fb_c = extract_baseline_features(v_row, tc_row, v_post, tc_post, voice_encoders, text_encoders)
+            rows_fb_clean.append(fb_c)
+
+            # Text Clean -> Corrupted Posterior Displacement
+            f_disp = extract_posterior_displacement_features(tc_row, te_row, tc_post, te_post, text_encoders)
+            rows_disp.append(f_disp)
+
+Save the script and run it again. Since the artifacts are already cached, it will instantly load them and breeze right through the feature extraction into training the detectors!
