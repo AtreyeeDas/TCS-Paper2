@@ -1,0 +1,23 @@
+# 1. Activate Environment
+conda activate asil_nlu
+
+# 2. Audit Dataset and Generate Leakage-Free Group Disjoint Splits
+python dataset_audit.py
+
+# 3. Extract and Cache Frozen Whisper Representations (Mean & Temporal Sequence)
+python extract_whisper_embeddings.py
+
+# 4. Extract and Cache Frozen HuBERT Acoustic Representations
+python extract_acoustic_embeddings.py
+
+# 5. Baseline: Mean Pooling (Semantic Only)
+python train_evaluate.py --mode mean
+
+# 6. Ablation: Attention Pooling (Semantic Only)
+python train_evaluate.py --mode attention
+
+# 7. Ablation: Attention Pooling with Imbalance Handling
+python train_evaluate.py --mode attention --balanced
+
+# 8. Full Architecture: Attention Pooling + HuBERT Acoustic + Gated Fusion + Balanced Loss
+python train_evaluate.py --mode attention_acoustic --balanced
