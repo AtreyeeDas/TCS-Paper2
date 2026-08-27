@@ -1,0 +1,56 @@
+[17:34:31] [AUDIT] Beginning Dataset & Schema Integrity Audit...
+[17:34:31] [AUDIT] Audit completed. Artifacts and canonical index map successfully validated.
+[17:34:31] [REAL-SUITE] Extracting full multi-feature representation for Real Whisper dataset...
+[17:34:31] [VOICE-NLU] Loading cached Voice-NLU forward inferences...
+[17:34:31] [TEXT-NLU] Loading cached Text-NLU inference: whisper_clean_text...
+[17:34:31] [TEXT-NLU] Loading cached Text-NLU inference: whisper_corrupted_text...
+[17:34:35] [SANITY] Starting Final Methodological Sanity Check...
+[17:34:35] [SANITY] Detecting exact mathematical duplicate features...
+[17:34:36] [SANITY] Removing explicit hierarchy redundancy (S2)...
+[17:34:36] [SANITY] Isolating continuous posterior evidence (S3)...
+[17:34:36] [SANITY] Training and evaluating S1, S2, S3...
+[17:34:36] [SANITY] Running programmatic leakage audit...
+
+==========================================================
+                   FINAL SANITY CHECK                     
+==========================================================
+Original Detector E + Hierarchy
+ Feature count: 198
+ F1: 1.0000
+ ROC-AUC: 1.0000
+ PR-AUC: 1.0000
+ FPR: 0.0000
+
+S1 — Exact duplicates removed
+ Feature count: 146
+ F1: 1.0000
+ ROC-AUC: 1.0000
+ PR-AUC: 1.0000
+ FPR: 0.0000
+
+S2 — Duplicates + hierarchy redundancy removed
+ Feature count: 146
+ F1: 1.0000
+ ROC-AUC: 1.0000
+ PR-AUC: 1.0000
+ FPR: 0.0000
+
+S3 — Continuous posterior evidence only
+ Feature count: 142
+ F1: 1.0000
+ ROC-AUC: 1.0000
+ PR-AUC: 1.0000
+ FPR: 0.0000
+
+Exact duplicate features found: 52
+Train/Validation overlap: 0
+Train/Unseen overlap: 0
+Validation/Unseen overlap: 0
+Target-derived features detected: 0
+==========================================================
+
+--- SCIENTIFIC INTERPRETATION ---
+Case B: S3 remains very strong.
+Conclusion: Continuous posterior/uncertainty information contains substantial independent signal beyond explicit top-1 label changes. This demonstrates genuine semantic destabilization.
+==========================================================
+
