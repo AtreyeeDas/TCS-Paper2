@@ -1,4 +1,4 @@
-(asil_nlu_master) spark2@01HW2722098:~/users/intern/Atreyee-Das/NLU_Robust_Experiment/code$ python error_detector/decoder_only_detected_diag.py
+(asil_nlu_master) spark2@01HW2722098:~/users/intern/Atreyee-Das/NLU_Robust_Experiment/code$ python error_detector/dec_stress_controlled_diag.py
 ============================================================
 PART 1: ARTIFACT AUDIT & LOADING
 ============================================================
@@ -7,127 +7,209 @@ Voice-NLU expected input dimension: 128
 Text-NLU expected input dimension: 128
 Detector B expected feature count: 51
 Detector B threshold: 0.05
-Number of dataset terms used for exclusion: 944
-Number of candidate distractors remaining: 23 / 50
+Number of dataset terms used for exclusion: 908
+Number of candidate distractors remaining: 26 / 50
 Encoder fixed-decoding implementation: PASS (using enc_out passed to whisper.decode)
 
 ============================================================
 PART 24: SANITY CHECK (FIRST 10 SAMPLES)
 ============================================================
-Generating Fixed-Encoder Candidates:   0%|                                       | 0/300 [00:00<?, ?it/s]
---- SANITY CHECK 1 ---
-Sample: nlu_0221_02 | Domain: finance
-Target: loan-to-value ratio | Temp: 0.0 | Cond: normal
-Transcript: The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
-Target Corrupted: 0
-Encoder Shape: torch.Size([1, 1500, 512]) | Voice Dim: (1, 128) | Text Dim: (1, 128)
-Voice Topic: mortgage underwriting | Text Topic: loan-to-value ratio
-Det Features Count: 51 | Det Prob: 1.000 | Pred: 1
-Voice-NLU posterior invariant: PASS
-
---- SANITY CHECK 2 ---
-Sample: nlu_0221_02 | Domain: finance
-Target: loan-to-value ratio | Temp: 0.0 | Cond: distractor
-Transcript: The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
-Target Corrupted: 0
-Encoder Shape: torch.Size([1, 1500, 512]) | Voice Dim: (1, 128) | Text Dim: (1, 128)
-Voice Topic: mortgage underwriting | Text Topic: loan-to-value ratio
-Det Features Count: 51 | Det Prob: 1.000 | Pred: 1
-Voice-NLU posterior invariant: PASS
-
---- SANITY CHECK 3 ---
-Sample: nlu_0221_02 | Domain: finance
-Target: loan-to-value ratio | Temp: 0.2 | Cond: normal
-Transcript: The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
-Target Corrupted: 0
-Encoder Shape: torch.Size([1, 1500, 512]) | Voice Dim: (1, 128) | Text Dim: (1, 128)
-Voice Topic: mortgage underwriting | Text Topic: loan-to-value ratio
-Det Features Count: 51 | Det Prob: 1.000 | Pred: 1
-Voice-NLU posterior invariant: PASS
-
---- SANITY CHECK 4 ---
-Sample: nlu_0221_02 | Domain: finance
-Target: loan-to-value ratio | Temp: 0.2 | Cond: distractor
-Transcript: The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
-Target Corrupted: 0
-Encoder Shape: torch.Size([1, 1500, 512]) | Voice Dim: (1, 128) | Text Dim: (1, 128)
-Voice Topic: mortgage underwriting | Text Topic: loan-to-value ratio
-Det Features Count: 51 | Det Prob: 1.000 | Pred: 1
-Voice-NLU posterior invariant: PASS
-
---- SANITY CHECK 5 ---
-Sample: nlu_0221_02 | Domain: finance
-Target: loan-to-value ratio | Temp: 0.4 | Cond: normal
-Transcript: The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
-Target Corrupted: 0
-Encoder Shape: torch.Size([1, 1500, 512]) | Voice Dim: (1, 128) | Text Dim: (1, 128)
-Voice Topic: mortgage underwriting | Text Topic: loan-to-value ratio
-Det Features Count: 51 | Det Prob: 1.000 | Pred: 1
-Voice-NLU posterior invariant: PASS
-
---- SANITY CHECK 6 ---
-Sample: nlu_0221_02 | Domain: finance
-Target: loan-to-value ratio | Temp: 0.4 | Cond: distractor
-Transcript: The team is evaluating loan-to-value ratio in the context of mortgage with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
-Target Corrupted: 0
-Encoder Shape: torch.Size([1, 1500, 512]) | Voice Dim: (1, 128) | Text Dim: (1, 128)
-Voice Topic: mortgage underwriting | Text Topic: loan-to-value ratio
-Det Features Count: 51 | Det Prob: 1.000 | Pred: 1
-Voice-NLU posterior invariant: PASS
-
---- SANITY CHECK 7 ---
-Sample: nlu_0221_02 | Domain: finance
-Target: loan-to-value ratio | Temp: 0.6 | Cond: normal
-Transcript: The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
-Target Corrupted: 0
-Encoder Shape: torch.Size([1, 1500, 512]) | Voice Dim: (1, 128) | Text Dim: (1, 128)
-Voice Topic: mortgage underwriting | Text Topic: loan-to-value ratio
-Det Features Count: 51 | Det Prob: 1.000 | Pred: 1
-Voice-NLU posterior invariant: PASS
-
---- SANITY CHECK 8 ---
-Sample: nlu_0221_02 | Domain: finance
-Target: loan-to-value ratio | Temp: 0.6 | Cond: distractor
-Transcript: The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter, while considering the current evidence. The record specifically references loan-to-value ratio.
-Target Corrupted: 0
-Encoder Shape: torch.Size([1, 1500, 512]) | Voice Dim: (1, 128) | Text Dim: (1, 128)
-Voice Topic: mortgage underwriting | Text Topic: loan-to-value ratio
-Det Features Count: 51 | Det Prob: 1.000 | Pred: 1
-Voice-NLU posterior invariant: PASS
-
---- SANITY CHECK 9 ---
-Sample: nlu_0221_02 | Domain: finance
-Target: loan-to-value ratio | Temp: 0.8 | Cond: normal
-Transcript: The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The records specifically references loan-to-value ratio.
-Target Corrupted: 0
-Encoder Shape: torch.Size([1, 1500, 512]) | Voice Dim: (1, 128) | Text Dim: (1, 128)
-Voice Topic: mortgage underwriting | Text Topic: loan-to-value ratio
-Det Features Count: 51 | Det Prob: 1.000 | Pred: 1
-Voice-NLU posterior invariant: PASS
-
---- SANITY CHECK 10 ---
-Sample: nlu_0221_02 | Domain: finance
-Target: loan-to-value ratio | Temp: 0.8 | Cond: distractor
-Transcript: The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
-Target Corrupted: 0
-Encoder Shape: torch.Size([1, 1500, 512]) | Voice Dim: (1, 128) | Text Dim: (1, 128)
-Voice Topic: mortgage underwriting | Text Topic: loan-to-value ratio
-Det Features Count: 51 | Det Prob: 1.000 | Pred: 1
-Voice-NLU posterior invariant: PASS
-Generating Fixed-Encoder Candidates: 100%|█████████████████████████████| 300/300 [16:05<00:00,  3.22s/it]
-
-============================================================
-PART 13: EVALUATE DETECTOR B
-============================================================
+Generating Fixed-Encoder Candidates:   0%|                                                                | 0/300 [00:00<?, ?it/s]
+--- CONTROLLED SANITY CHECK 1 ---
+Sample: nlu_0221_02 | Target: loan-to-value ratio
+Clean transcript (L0): The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
+Level 1 corrupted: The team is evaluating healthcare reimbursement in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
+Level 2 corrupted: The team is evaluating commodity procurement in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
+Voice posterior — clean: Topic=mortgage underwriting (0.709)
+Voice posterior — Level 1: Topic=mortgage underwriting (0.709)
+Voice posterior — Level 2: Topic=mortgage underwriting (0.709)
+Voice posterior invariant: PASS
+Text posterior — clean: Topic=loan-to-value ratio (0.996)
+Text posterior — Level 1: Topic=equity valuation (0.454)
+Text posterior — Level 2: Topic=credit risk (0.895)
+Detector B probability — clean: 1.000
+Detector B probability — Level 1: 1.000
+Detector B probability — Level 2: 1.000
+Generating Fixed-Encoder Candidates:   0%|▏                                                       | 1/300 [00:06<33:41,  6.76s/it]
+--- CONTROLLED SANITY CHECK 2 ---
+Sample: nlu_0225_02 | Target: loan-to-value ratio
+Clean transcript (L0): The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. After the recent update, the assigned professional, while considering the current evidence. The record specifically references loan-to-value ratio.
+Level 1 corrupted: The team is evaluating premium reconciliation in the context of mortgage, with particular attention to the reported issue. After the recent update, the assigned professional, while considering the current evidence. The record specifically references loan-to-value ratio.
+Level 2 corrupted: The team is evaluating commodity procurement in the context of mortgage, with particular attention to the reported issue. After the recent update, the assigned professional, while considering the current evidence. The record specifically references loan-to-value ratio.
+Voice posterior — clean: Topic=loan-to-value ratio (0.624)
+Voice posterior — Level 1: Topic=loan-to-value ratio (0.624)
+Voice posterior — Level 2: Topic=loan-to-value ratio (0.624)
+Voice posterior invariant: PASS
+Text posterior — clean: Topic=loan-to-value ratio (0.994)
+Text posterior — Level 1: Topic=loan-to-value ratio (0.643)
+Text posterior — Level 2: Topic=credit risk (0.782)
+Detector B probability — clean: 1.000
+Detector B probability — Level 1: 1.000
+Detector B probability — Level 2: 1.000
+Generating Fixed-Encoder Candidates:   1%|▎                                                       | 2/300 [00:11<27:15,  5.49s/it]
+--- CONTROLLED SANITY CHECK 3 ---
+Sample: nlu_0406_01 | Target: discovery
+Clean transcript (L0): The current findings was reviewed in relation to discovery and document production. At the current stage, the case team before the next decision.
+Level 1 corrupted: The current findings was reviewed in relation to order confirmation and document production. At the current stage, the case team before the next decision.
+Level 2 corrupted: The current findings was reviewed in relation to payment confirmation and document production. At the current stage, the case team before the next decision.
+Voice posterior — clean: Topic=discovery (0.421)
+Voice posterior — Level 1: Topic=discovery (0.421)
+Voice posterior — Level 2: Topic=discovery (0.421)
+Voice posterior invariant: PASS
+Text posterior — clean: Topic=discovery (0.998)
+Text posterior — Level 1: Topic=jurisdiction (0.910)
+Text posterior — Level 2: Topic=credit risk (0.726)
+Detector B probability — clean: 1.000
+Detector B probability — Level 1: 1.000
+Detector B probability — Level 2: 1.000
+Generating Fixed-Encoder Candidates:   1%|▌                                                       | 3/300 [00:13<20:38,  4.17s/it]
+--- CONTROLLED SANITY CHECK 4 ---
+Sample: nlu_0105_06 | Target: migraine with aura
+Clean transcript (L0): The available evidence was considered before deciding how to address the current status of migraine with aura. After the latest information became available, the reviewing group, during the present round of discussion.
+Level 1 corrupted: The available evidence was considered before deciding how to address the current status of vascular calcification. After the latest information became available, the reviewing group, during the present round of discussion.
+Level 2 corrupted: The available evidence was considered before deciding how to address the current status of pulmonary embolism. After the latest information became available, the reviewing group, during the present round of discussion.
+Voice posterior — clean: Topic=migraine with aura (0.997)
+Voice posterior — Level 1: Topic=migraine with aura (0.997)
+Voice posterior — Level 2: Topic=migraine with aura (0.997)
+Voice posterior invariant: PASS
+Text posterior — clean: Topic=migraine with aura (0.972)
+Text posterior — Level 1: Topic=cardiac catheterization (0.509)
+Text posterior — Level 2: Topic=ventricular tachycardia (0.971)
+Detector B probability — clean: 1.000
+Detector B probability — Level 1: 1.000
+Detector B probability — Level 2: 1.000
+Generating Fixed-Encoder Candidates:   1%|▋                                                       | 4/300 [00:17<18:58,  3.85s/it]
+--- CONTROLLED SANITY CHECK 5 ---
+Sample: nlu_0235_05 | Target: non-performing asset
+Clean transcript (L0): The specialist discussed the documented issue involving loan delinquency during the latest response. After the recent update, the assigned professional, while comparing the available options. The record specifically references non-performing asset.
+Level 1 corrupted: The specialist discussed the documented issue involving loan delinquency during the latest response. After the recent update, the assigned professional, while comparing the available options. The record specifically references insurance eligibility.
+Level 2 corrupted: The specialist discussed the documented issue involving loan delinquency during the latest response. After the recent update, the assigned professional, while comparing the available options. The record specifically references clinical payment settlement.
+Voice posterior — clean: Topic=non-performing asset (0.998)
+Voice posterior — Level 1: Topic=non-performing asset (0.998)
+Voice posterior — Level 2: Topic=non-performing asset (0.998)
+Voice posterior invariant: PASS
+Text posterior — clean: Topic=non-performing asset (0.888)
+Text posterior — Level 1: Topic=non-performing asset (0.680)
+Text posterior — Level 2: Topic=non-performing asset (0.633)
+Detector B probability — clean: 1.000
+Detector B probability — Level 1: 1.000
+Detector B probability — Level 2: 1.000
+Generating Fixed-Encoder Candidates:   2%|▉                                                       | 5/300 [00:20<18:32,  3.77s/it]
+--- CONTROLLED SANITY CHECK 6 ---
+Sample: nlu_0234_10 | Target: non-performing asset
+Clean transcript (L0): Further case is needed before a final decision is made about the decision surrounding default, following the previous discussion, the relevant team, before the next decision. The record specifically references non-performing asset.
+Level 1 corrupted: Further case is needed before a final decision is made about the decision surrounding default, following the previous discussion, the relevant team, before the next decision. The record specifically references hospital revenue cycle.
+Level 2 corrupted: Further case is needed before a final decision is made about the decision surrounding default, following the previous discussion, the relevant team, before the next decision. The record specifically references algorithmic trading.
+Voice posterior — clean: Topic=non-performing asset (0.994)
+Voice posterior — Level 1: Topic=non-performing asset (0.994)
+Voice posterior — Level 2: Topic=non-performing asset (0.994)
+Voice posterior invariant: PASS
+Text posterior — clean: Topic=non-performing asset (0.944)
+Text posterior — Level 1: Topic=ST elevation (0.664)
+Text posterior — Level 2: Topic=ST elevation (0.775)
+Detector B probability — clean: 1.000
+Detector B probability — Level 1: 1.000
+Detector B probability — Level 2: 1.000
+Generating Fixed-Encoder Candidates:   2%|█▎                                                      | 7/300 [00:27<17:14,  3.53s/it]
+--- CONTROLLED SANITY CHECK 7 ---
+Sample: nlu_0380_01 | Target: plaintiff
+Clean transcript (L0): The current findings was reviewed in relation to plaintiff and claim. As part of the current review, the relevant team, while comparing the available options.
+Level 1 corrupted: The current findings was reviewed in relation to order confirmation and claim. As part of the current review, the relevant team, while comparing the available options.
+Level 2 corrupted: The current findings was reviewed in relation to payment confirmation and claim. As part of the current review, the relevant team, while comparing the available options.
+Voice posterior — clean: Topic=plaintiff (0.977)
+Voice posterior — Level 1: Topic=plaintiff (0.977)
+Voice posterior — Level 2: Topic=plaintiff (0.977)
+Voice posterior invariant: PASS
+Text posterior — clean: Topic=plaintiff (0.986)
+Text posterior — Level 1: Topic=jurisdiction (0.971)
+Text posterior — Level 2: Topic=credit risk (0.962)
+Detector B probability — clean: 1.000
+Detector B probability — Level 1: 1.000
+Detector B probability — Level 2: 1.000
+Generating Fixed-Encoder Candidates:   3%|█▍                                                      | 8/300 [00:30<15:56,  3.28s/it]
+--- CONTROLLED SANITY CHECK 8 ---
+Sample: nlu_0007_02 | Target: myocardial
+Clean transcript (L0): The team is evaluating myocardial ischemia in the context of coronary occlusion, with particular attention to the reported issue. After the recent update, the responsible specialist, during the present round of discussion. The record specifically references myocardial ischemia.
+Level 1 corrupted: The team is evaluating vascular calcification ischemia in the context of coronary occlusion, with particular attention to the reported issue. After the recent update, the responsible specialist, during the present round of discussion. The record specifically references myocardial ischemia.
+Level 2 corrupted: The team is evaluating pericardial inflammation ischemia in the context of coronary occlusion, with particular attention to the reported issue. After the recent update, the responsible specialist, during the present round of discussion. The record specifically references myocardial ischemia.
+Voice posterior — clean: Topic=acute myocardial infarction (0.996)
+Voice posterior — Level 1: Topic=acute myocardial infarction (0.996)
+Voice posterior — Level 2: Topic=acute myocardial infarction (0.996)
+Voice posterior invariant: PASS
+Text posterior — clean: Topic=acute myocardial infarction (0.958)
+Text posterior — Level 1: Topic=ST elevation (0.585)
+Text posterior — Level 2: Topic=acute myocardial infarction (0.942)
+Detector B probability — clean: 1.000
+Detector B probability — Level 1: 1.000
+Detector B probability — Level 2: 1.000
+Generating Fixed-Encoder Candidates:   3%|█▋                                                      | 9/300 [00:35<18:20,  3.78s/it]
+--- CONTROLLED SANITY CHECK 9 ---
+Sample: nlu_0559_05 | Target: reminder
+Clean transcript (L0): Can you tell me how to set a personal reminder given in the current round of review, the responsible specialist, while considering the current evidence?
+Level 1 corrupted: Can you tell me how to set a personal order confirmation given in the current round of review, the responsible specialist, while considering the current evidence?
+Level 2 corrupted: Can you tell me how to set a personal payment confirmation given in the current round of review, the responsible specialist, while considering the current evidence?
+Voice posterior — clean: Topic=NONE (1.000)
+Voice posterior — Level 1: Topic=NONE (1.000)
+Voice posterior — Level 2: Topic=NONE (1.000)
+Voice posterior invariant: PASS
+Text posterior — clean: Topic=NONE (1.000)
+Text posterior — Level 1: Topic=NONE (1.000)
+Text posterior — Level 2: Topic=NONE (1.000)
+Detector B probability — clean: 1.000
+Detector B probability — Level 1: 1.000
+Detector B probability — Level 2: 0.999
+Generating Fixed-Encoder Candidates:   4%|██▏                                                    | 12/300 [00:45<16:23,  3.42s/it]
+--- CONTROLLED SANITY CHECK 10 ---
+Sample: nlu_0353_08 | Target: liquidated damages
+Clean transcript (L0): The case involves the reported concern involving liquidated damages and the relevant, relevant records is being assessed, as part of the current review, the reviewing organization, before the next decision. The record specifically references liquidated damages.
+Level 1 corrupted: The case involves the reported concern involving payment confirmation and the relevant, relevant records is being assessed, as part of the current review, the reviewing organization, before the next decision. The record specifically references liquidated damages.
+Level 2 corrupted: The case involves the reported concern involving order confirmation and the relevant, relevant records is being assessed, as part of the current review, the reviewing organization, before the next decision. The record specifically references liquidated damages.
+Voice posterior — clean: Topic=liquidated damages (0.970)
+Voice posterior — Level 1: Topic=liquidated damages (0.970)
+Voice posterior — Level 2: Topic=liquidated damages (0.970)
+Voice posterior invariant: PASS
+Text posterior — clean: Topic=liquidated damages (0.984)
+Text posterior — Level 1: Topic=representations and warranties (0.369)
+Text posterior — Level 2: Topic=representations and warranties (0.499)
+Detector B probability — clean: 1.000
+Detector B probability — Level 1: 1.000
+Detector B probability — Level 2: 1.000
+Generating Fixed-Encoder Candidates: 100%|██████████████████████████████████████████████████████| 300/300 [17:33<00:00,  3.51s/it]
 
 ============================================================
 FINAL PLAIN-LANGUAGE REPORT
 ============================================================
-What happened?
-1. A fixed Whisper encoder representation produced 3000 alternative decoder transcripts via temperature and distractor-prompt conditioning.
-2. Target terms were corrupted 10.7% of the time.
-3. Voice-NLU inherently preserved exact original semantic information because the encoder input was locked.
-4. Existing Detector B achieved ROC-AUC: 0.741 and F1: 0.194 on purely decoder-induced errors.
+Natural decoder-only corruption was sparse (10.7%).
+Natural ASR Detector F1: 0.195 | ROC-AUC: 0.737
 
-NEXT STEP:
-RETRAIN DETECTOR B → THEN PROCEED TO REASONING
+============================================================
+CONTROLLED DECODER-SIDE CORRUPTION STRESS TEST
+============================================================
+Samples: 257
+Level 0: 257
+Level 1: 257
+Level 2: 257
+Target corruption rate: 66.7%
+Voice-NLU posterior invariant: PASS
+Detector B:
+Level 0 vs Level 1
+    Precision: 0.498
+    Recall: 0.984
+    F1: 0.661
+    ROC-AUC: 0.651
+    PR-AUC: 0.703
+Level 0 vs Level 2
+    Precision: 0.499
+    Recall: 0.988
+    F1: 0.663
+    ROC-AUC: 0.653
+    PR-AUC: 0.700
+Level 0 vs Level 1+2
+    Precision: 0.665
+    Recall: 0.986
+    F1: 0.795
+    ROC-AUC: 0.652
+    PR-AUC: 0.815
+
+This is a controlled decoder-side corruption stress test, not evidence of naturally occurring Whisper decoder errors.
+============================================================
