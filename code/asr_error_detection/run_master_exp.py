@@ -397,27 +397,21 @@ class MasterExperimentSuite:
             # SAVE DEPLOYMENT-READY REAL-WHISPER DETECTOR B
             # ============================================================
 
-# 1. Save the fitted Pipeline (Scaler + Logistic Regression)
+            # 1. Save the fitted Pipeline (Scaler + Logistic Regression)
             detector_b_path = MODELS_CACHE_DIR / "real_whisper_detector_B.joblib"
             joblib.dump(clf_b, detector_b_path)
 
-# 2. Save the exact feature ordering used during training
-feature_columns_path = MODELS_CACHE_DIR / "real_whisper_detector_B_features.json"
-with open(feature_columns_path, "w") as f:
-    json.dump(df_fb_corr.columns.tolist(), f, indent=2)
+            # 2. Save the exact feature ordering used during training
+            feature_columns_path = MODELS_CACHE_DIR / "real_whisper_detector_B_features.json"    
+            with open(feature_columns_path, "w") as f:
+                json.dump(df_fb_corr.columns.tolist(), f, indent=2)
 
-# 3. Save the validation-selected operating threshold
-threshold_path = MODELS_CACHE_DIR / "real_whisper_detector_B_threshold.json"
-with open(threshold_path, "w") as f:
-    json.dump({
-        "threshold": float(t_b_real),
-        "selection_method": "best_F1_on_validation_split"
-    }, f, indent=2)
+            # 3. Save the validation-selected operating threshold
+            threshold_path = MODELS_CACHE_DIR / "real_whisper_detector_B_threshold.json"
+            with open(threshold_path, "w") as f:
+                json.dump({"threshold": float(t_b_real),"selection_method": "best_F1_on_validation_split"}, f, indent=2)
 
-self.log(
-    "MODEL-SAVE",
-    f"Deployment Detector B saved to: {detector_b_path}"
-)
+            self.log("MODEL-SAVE",f"Deployment Detector B saved to: {detector_b_path}")
             self.master_comparison_records.extend([
                 {"experiment": "02_real_whisper_baseline", "detector": "Detector B", **m_02_b},
                 {"experiment": "06_hierarchy", "detector": "Detector E + Hierarchy", **m_06_hier}
