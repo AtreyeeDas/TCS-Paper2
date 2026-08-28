@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/error_detector/run_reasoning_ablation.py", line 825, in <module>
+    run_reasoning_experiment()
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/error_detector/run_reasoning_ablation.py", line 500, in run_reasoning_experiment
+    text_row[f"text_{h}"] = t_enc[f"{h}_label"].inverse_transform([np.argmax(probs)])[0]
+                            ~~~~~^^^^^^^^^^^^^^
+TypeError: 'float' object is not subscriptable
