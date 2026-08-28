@@ -321,10 +321,16 @@ def run_diagnostic():
                     continue # Skip distractor condition if none available
                 
                 # FIXED ENCODER DECODE
+                                # FIXED ENCODER DECODE
                 with torch.no_grad():
                     dec_res = whisper.decode(whisper_model, enc_out, whisper.DecodingOptions(**options_dict))
+                    
+                    # Extract the result from the batch list if necessary
+                    if isinstance(dec_res, list):
+                        dec_res = dec_res[0]
+                        
                     candidate_text = dec_res.text.strip()
-                
+
                 prompt_audit.append({
                     "sample_id": sample_id,
                     "domain": domain,
