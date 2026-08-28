@@ -27,3 +27,4 @@ Traceback (most recent call last):
     _check_n_features(_estimator, X, reset=reset)
   File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/sklearn/utils/validation.py", line 2829, in _check_n_features
     raise ValueError(
+ValueError: X has 512 features, but MLPClassifier is expecting 128 features as input.
