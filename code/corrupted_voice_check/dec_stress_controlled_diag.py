@@ -360,7 +360,7 @@ def run_diagnostic():
                 if use_distractor and len(available_distractors) > 0:
                     selected = np.random.choice(available_distractors, min(5, len(available_distractors)), replace=False)
                     distractors_used = ", ".join(selected)
-                    options_dict["initial_prompt"] = f"English speech transcription. The speaker may use specialized domain terminology. The recording may contain terminology that sounds similar to other specialized terms. Possible terminology includes: {distractors_used}. Pay close attention to pronunciation and distinguish similar-sounding specialized terms carefully."
+                    options_dict["prompt"] = f"English speech transcription. The speaker may use specialized domain terminology. The recording may contain terminology that sounds similar to other specialized terms. Possible terminology includes: {distractors_used}. Pay close attention to pronunciation and distinguish similar-sounding specialized terms carefully."
                 elif use_distractor:
                     continue
                 
