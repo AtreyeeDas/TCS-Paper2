@@ -1,0 +1,29 @@
+============================================================
+REASONING ABLATION: CONTROLLED DECODER-SIDE CORRUPTION STRESS TEST
+============================================================
+[+] Loaded 200 unseen eligible audio samples.
+[+] Loading Gemma-3-1B-it locally from: /home/spark2/Models/gemma_2_models/gemma-3-1b-it
+Traceback (most recent call last):
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/error_detector/run_reasoning_ablation.py", line 825, in <module>
+    run_reasoning_experiment()
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/error_detector/run_reasoning_ablation.py", line 353, in run_reasoning_experiment
+    gemma = GemmaReasoningEngine(GEMMA_MODEL_PATH, device=DEVICE)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/error_detector/run_reasoning_ablation.py", line 255, in __init__
+    self.tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/transformers/models/auto/tokenization_auto.py", line 862, in from_pretrained
+    return tokenizer_class.from_pretrained(pretrained_model_name_or_path, *inputs, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/transformers/tokenization_utils_base.py", line 2089, in from_pretrained
+    return cls._from_pretrained(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/transformers/tokenization_utils_base.py", line 2311, in _from_pretrained
+    tokenizer = cls(*init_inputs, **init_kwargs)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/transformers/models/gemma/tokenization_gemma_fast.py", line 103, in __init__
+    super().__init__(
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/transformers/tokenization_utils_fast.py", line 111, in __init__
+    fast_tokenizer = TokenizerFast.from_file(fast_tokenizer_file)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Exception: data did not match any variant of untagged enum ModelWrapper at line 2379610 column 3
