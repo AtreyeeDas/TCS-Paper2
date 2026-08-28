@@ -1,3 +1,5 @@
+(asil_nlu_master) spark2@01HW2722098:~/users/intern/Atreyee-Das/NLU_Robust_Experiment/code$ python error_detector/decoder_only_detected_diag.py
+============================================================
 PART 1: ARTIFACT AUDIT & LOADING
 ============================================================
 [+] Found 300 valid audio samples for diagnostic from 300 candidates.
@@ -12,11 +14,120 @@ Encoder fixed-decoding implementation: PASS (using enc_out passed to whisper.dec
 ============================================================
 PART 24: SANITY CHECK (FIRST 10 SAMPLES)
 ============================================================
-Generating Fixed-Encoder Candidates:   0%|                                       | 0/300 [00:01<?, ?it/s]
-Traceback (most recent call last):
-  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/error_detector/decoder_only_detected_diag.py", line 462, in <module>
-    run_diagnostic()
-  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/error_detector/decoder_only_detected_diag.py", line 326, in run_diagnostic
-    candidate_text = dec_res.text.strip()
-                     ^^^^^^^^^^^^
-AttributeError: 'list' object has no attribute 'text'
+Generating Fixed-Encoder Candidates:   0%|                                       | 0/300 [00:00<?, ?it/s]
+--- SANITY CHECK 1 ---
+Sample: nlu_0221_02 | Domain: finance
+Target: loan-to-value ratio | Temp: 0.0 | Cond: normal
+Transcript: The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
+Target Corrupted: 0
+Encoder Shape: torch.Size([1, 1500, 512]) | Voice Dim: (1, 128) | Text Dim: (1, 128)
+Voice Topic: mortgage underwriting | Text Topic: loan-to-value ratio
+Det Features Count: 51 | Det Prob: 1.000 | Pred: 1
+Voice-NLU posterior invariant: PASS
+
+--- SANITY CHECK 2 ---
+Sample: nlu_0221_02 | Domain: finance
+Target: loan-to-value ratio | Temp: 0.0 | Cond: distractor
+Transcript: The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
+Target Corrupted: 0
+Encoder Shape: torch.Size([1, 1500, 512]) | Voice Dim: (1, 128) | Text Dim: (1, 128)
+Voice Topic: mortgage underwriting | Text Topic: loan-to-value ratio
+Det Features Count: 51 | Det Prob: 1.000 | Pred: 1
+Voice-NLU posterior invariant: PASS
+
+--- SANITY CHECK 3 ---
+Sample: nlu_0221_02 | Domain: finance
+Target: loan-to-value ratio | Temp: 0.2 | Cond: normal
+Transcript: The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
+Target Corrupted: 0
+Encoder Shape: torch.Size([1, 1500, 512]) | Voice Dim: (1, 128) | Text Dim: (1, 128)
+Voice Topic: mortgage underwriting | Text Topic: loan-to-value ratio
+Det Features Count: 51 | Det Prob: 1.000 | Pred: 1
+Voice-NLU posterior invariant: PASS
+
+--- SANITY CHECK 4 ---
+Sample: nlu_0221_02 | Domain: finance
+Target: loan-to-value ratio | Temp: 0.2 | Cond: distractor
+Transcript: The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
+Target Corrupted: 0
+Encoder Shape: torch.Size([1, 1500, 512]) | Voice Dim: (1, 128) | Text Dim: (1, 128)
+Voice Topic: mortgage underwriting | Text Topic: loan-to-value ratio
+Det Features Count: 51 | Det Prob: 1.000 | Pred: 1
+Voice-NLU posterior invariant: PASS
+
+--- SANITY CHECK 5 ---
+Sample: nlu_0221_02 | Domain: finance
+Target: loan-to-value ratio | Temp: 0.4 | Cond: normal
+Transcript: The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
+Target Corrupted: 0
+Encoder Shape: torch.Size([1, 1500, 512]) | Voice Dim: (1, 128) | Text Dim: (1, 128)
+Voice Topic: mortgage underwriting | Text Topic: loan-to-value ratio
+Det Features Count: 51 | Det Prob: 1.000 | Pred: 1
+Voice-NLU posterior invariant: PASS
+
+--- SANITY CHECK 6 ---
+Sample: nlu_0221_02 | Domain: finance
+Target: loan-to-value ratio | Temp: 0.4 | Cond: distractor
+Transcript: The team is evaluating loan-to-value ratio in the context of mortgage with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
+Target Corrupted: 0
+Encoder Shape: torch.Size([1, 1500, 512]) | Voice Dim: (1, 128) | Text Dim: (1, 128)
+Voice Topic: mortgage underwriting | Text Topic: loan-to-value ratio
+Det Features Count: 51 | Det Prob: 1.000 | Pred: 1
+Voice-NLU posterior invariant: PASS
+
+--- SANITY CHECK 7 ---
+Sample: nlu_0221_02 | Domain: finance
+Target: loan-to-value ratio | Temp: 0.6 | Cond: normal
+Transcript: The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
+Target Corrupted: 0
+Encoder Shape: torch.Size([1, 1500, 512]) | Voice Dim: (1, 128) | Text Dim: (1, 128)
+Voice Topic: mortgage underwriting | Text Topic: loan-to-value ratio
+Det Features Count: 51 | Det Prob: 1.000 | Pred: 1
+Voice-NLU posterior invariant: PASS
+
+--- SANITY CHECK 8 ---
+Sample: nlu_0221_02 | Domain: finance
+Target: loan-to-value ratio | Temp: 0.6 | Cond: distractor
+Transcript: The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter, while considering the current evidence. The record specifically references loan-to-value ratio.
+Target Corrupted: 0
+Encoder Shape: torch.Size([1, 1500, 512]) | Voice Dim: (1, 128) | Text Dim: (1, 128)
+Voice Topic: mortgage underwriting | Text Topic: loan-to-value ratio
+Det Features Count: 51 | Det Prob: 1.000 | Pred: 1
+Voice-NLU posterior invariant: PASS
+
+--- SANITY CHECK 9 ---
+Sample: nlu_0221_02 | Domain: finance
+Target: loan-to-value ratio | Temp: 0.8 | Cond: normal
+Transcript: The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The records specifically references loan-to-value ratio.
+Target Corrupted: 0
+Encoder Shape: torch.Size([1, 1500, 512]) | Voice Dim: (1, 128) | Text Dim: (1, 128)
+Voice Topic: mortgage underwriting | Text Topic: loan-to-value ratio
+Det Features Count: 51 | Det Prob: 1.000 | Pred: 1
+Voice-NLU posterior invariant: PASS
+
+--- SANITY CHECK 10 ---
+Sample: nlu_0221_02 | Domain: finance
+Target: loan-to-value ratio | Temp: 0.8 | Cond: distractor
+Transcript: The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
+Target Corrupted: 0
+Encoder Shape: torch.Size([1, 1500, 512]) | Voice Dim: (1, 128) | Text Dim: (1, 128)
+Voice Topic: mortgage underwriting | Text Topic: loan-to-value ratio
+Det Features Count: 51 | Det Prob: 1.000 | Pred: 1
+Voice-NLU posterior invariant: PASS
+Generating Fixed-Encoder Candidates: 100%|█████████████████████████████| 300/300 [16:05<00:00,  3.22s/it]
+
+============================================================
+PART 13: EVALUATE DETECTOR B
+============================================================
+
+============================================================
+FINAL PLAIN-LANGUAGE REPORT
+============================================================
+What happened?
+1. A fixed Whisper encoder representation produced 3000 alternative decoder transcripts via temperature and distractor-prompt conditioning.
+2. Target terms were corrupted 10.7% of the time.
+3. Voice-NLU inherently preserved exact original semantic information because the encoder input was locked.
+4. Existing Detector B achieved ROC-AUC: 0.741 and F1: 0.194 on purely decoder-induced errors.
+
+NEXT STEP:
+RETRAIN DETECTOR B → THEN PROCEED TO REASONING
