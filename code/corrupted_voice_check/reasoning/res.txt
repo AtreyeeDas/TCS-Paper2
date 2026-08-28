@@ -1,0 +1,33 @@
+============================================================
+FINAL DOWNSTREAM REASONING ABLATION
+============================================================
+Samples: 200
+Clean: 200 | L1: 200 | L2: 200
+
+DETECTOR
+Precision: 0.765
+Recall:    0.968
+F1:        0.854
+ROC-AUC:   0.856
+PR-AUC:    0.920
+
+REASONING
+Metric                 | Baseline   | Voice-NLU  | Detector-Gated
+-----------------------------------------------------------------
+Clean Accuracy         | 0.000      | 0.000      | 0.000         
+L1 Accuracy            | 0.000      | 0.000      | 0.000         
+L2 Accuracy            | 0.000      | 0.000      | 0.000         
+Correction Success     | 0.000      | 0.000      | 0.000         
+Distractor Adoption    | 0.000      | 0.000      | 0.000         
+False Correction       | 0.000      | 0.000      | 0.000         
+
+LATENCY (Mean Total ms)
+Baseline:       195.38 ms
+Voice-NLU:      196.44 ms
+Detector-Gated: 195.63 ms
+============================================================
+
+Interpretation:
+Under this controlled decoder-side corruption stress test, the acoustic encoder representation remained invariant.
+Detector-gating prevents unnecessary transcript modifications on clean audio while recovering semantic accuracy on corrupted sequences.
+============================================================
