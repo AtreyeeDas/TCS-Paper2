@@ -1,18 +1,29 @@
-(asil_nlu_master) spark2@01HW2722098:~/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/voice_nlu_corrupted_embedding$ python run_acoustic_diagnostic.py
-==================================================
-STEP 0: ARTIFACT AUDIT
-==================================================
-[✓] All project files and NLU artifacts verified.
+asil_nlu_master) spark2@01HW2722098:~/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/voice_nlu_corrupted_embedding$ python decoder_only_detected_diag.py
+============================================================
+PART 1: ARTIFACT AUDIT & LOADING
+============================================================
+[+] Loading Whisper from /home/spark2/Models/base.en.pt...
+[+] Loading Voice-NLU & Text-NLU Artifacts...
+[+] Loading Existing Detector B...
+[!] Warning: Detector B does not expose feature_names_in_. Using fallback strict ordering.
 
-[+] Loading Whisper from local checkpoint: /home/spark2/Models/base.en.pt...
-Analyzing Samples: 100%|█████████████████████████████████████████| 179/179 [00:54<00:00,  3.30it/s]
+============================================================
+PART 24: SANITY CHECK (FIRST 10 SAMPLES)
+============================================================
+Generating Decoder Candidates:   0%|                                                                            | 0/500 [00:00<?, ?it/s]
 Traceback (most recent call last):
-  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/voice_nlu_corrupted_embedding/run_acoustic_diagnostic.py", line 361, in <module>
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/voice_nlu_corrupted_embedding/decoder_only_detected_diag.py", line 446, in <module>
     run_diagnostic()
-  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/voice_nlu_corrupted_embedding/run_acoustic_diagnostic.py", line 321, in run_diagnostic
-    np.savez_compressed(EXP_DIR / "posterior_npz" / "text_posteriors.npz", **{str(i): t for i, v in enumerate(text_posteriors_list)})
-                                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/voice_nlu_corrupted_embedding/run_acoustic_diagnostic.py", line 321, in <dictcomp>
-    np.savez_compressed(EXP_DIR / "posterior_npz" / "text_posteriors.npz", **{str(i): t for i, v in enumerate(text_posteriors_list)})
-                                                                                      ^
-NameError: name 't' is not defined
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/voice_nlu_corrupted_embedding/decoder_only_detected_diag.py", line 245, in run_diagnostic
+    probs = v_mlps[h].predict_proba(emb_512)[0]
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/sklearn/neural_network/_multilayer_perceptron.py", line 1264, in predict_proba
+    y_pred = self._forward_pass_fast(X)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/sklearn/neural_network/_multilayer_perceptron.py", line 204, in _forward_pass_fast
+    X = validate_data(self, X, accept_sparse=["csr", "csc"], reset=False)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/sklearn/utils/validation.py", line 2965, in validate_data
+    _check_n_features(_estimator, X, reset=reset)
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/sklearn/utils/validation.py", line 2829, in _check_n_features
+    raise ValueError(
