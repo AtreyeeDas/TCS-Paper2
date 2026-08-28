@@ -1,0 +1,9 @@
+[+] Executing Pipeline on 897 Eligible Samples...
+  0%|                                                                                                   | 0/897 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/error_detector/run_reasoning_ablation.py", line 654, in <module>
+    run_reasoning_experiment()
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/error_detector/run_reasoning_ablation.py", line 400, in run_reasoning_experiment
+    emb_512 = enc_out.mean(dim=1).cpu().numpy().astype(np.float32)
+              ^^^^^^^^^^^^^^^^^^^
+IndexError: Dimension out of range (expected to be in range of [-1, 0], but got 1)
