@@ -1,15 +1,36 @@
-Loading weights: 100%|███████████████████████████████████████████████████████████████████████████████████████████████| 103/103 [00:00<00:00, 8802.59it/s]
-Analyzing Samples:   0%|                                                                                                         | 0/179 [00:00<?, ?it/s]
+
+(asil_nlu_master) spark2@01HW2722098:~/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/voice_nlu_corrupted_embedding$ python run_acoustic_diagnostic.py
+==================================================
+STEP 0: ARTIFACT AUDIT
+==================================================
+[✓] All project files and NLU artifacts verified.
+
+[+] Loading Whisper from local checkpoint: /home/spark2/Models/base.en.pt...
+Analyzing Samples:   3%|█▏                                         | 5/179 [00:08<04:58,  1.72s/it]
 Traceback (most recent call last):
   File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/voice_nlu_corrupted_embedding/run_acoustic_diagnostic.py", line 352, in <module>
     run_diagnostic()
-  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/voice_nlu_corrupted_embedding/run_acoustic_diagnostic.py", line 174, in run_diagnostic
-    clean_res = whisper_model.transcribe(audio_path.as_posix(), word_timestamps=True)
-                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/spark2/miniconda3/envs/asil_nlu2/lib/python3.11/site-packages/whisper/transcribe.py", line 181, in transcribe
-    result: DecodingResult = decode_with_fallback(segment)
-                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/spark2/miniconda3/envs/asil_nlu2/lib/python3.11/site-packages/whisper/transcribe.py", line 116, in decode_with_fallback
-    options = DecodingOptions(**kwargs, temperature=t)
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-TypeError: DecodingOptions.__init__() got an unexpected keyword argument 'word_timestamps'
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/voice_nlu_corrupted_embedding/run_acoustic_diagnostic.py", line 201, in run_diagnostic
+    dec_res = whisper.decode(whisper_model, mel, whisper.DecodingOptions(fp16=False))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/whisper/decoding.py", line 824, in decode
+    result = DecodingTask(model, options).run(mel)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/whisper/decoding.py", line 722, in run
+    languages, language_probs = self._detect_language(audio_features, tokens)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/whisper/decoding.py", line 671, in _detect_language
+    lang_tokens, lang_probs = self.model.detect_language(
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/whisper/decoding.py", line 42, in detect_language
+    raise ValueError(
+ValueError: This model doesn't have language tokens so it can't perform lang id
