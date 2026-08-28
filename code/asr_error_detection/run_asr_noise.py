@@ -9,6 +9,8 @@ import whisper
 import jiwer
 import soundfile as sf
 from tqdm import tqdm
+from difflib import SequenceMatcher
+
 
 # =========================================================
 # CONFIGURATION
@@ -25,7 +27,7 @@ DATASET_CSV = (
 TARGET_CSV = (
     "/home/spark2/users/intern/Atreyee-Das/"
     "NLU_Robust_Experiment/dataset/"
-    "domain_term_targets_6000.csv"
+    "domain_term_targets_6000_multitarget.csv"
 )
 
 AUDIO_DIR = (
@@ -35,7 +37,7 @@ AUDIO_DIR = (
 
 ASR_DIR = (
     "/home/spark2/users/intern/Atreyee-Das/"
-    "NLU_Robust_Experiment/asr_domain_corruption"
+    "NLU_Robust_Experiment/asr_domain_multitarget"
 )
 
 CORRUPTED_AUDIO_DIR = os.path.join(
@@ -52,7 +54,7 @@ CORRUPTED_JSON_DIR = os.path.join(
 
 OUTPUT_CSV = os.path.join(
     ASR_DIR,
-    "whisper_domain_error_6000.csv"
+    "whisper_domain_multitarget_6000.csv"
 )
 
 PROGRESS_FILE = os.path.join(
@@ -60,118 +62,130 @@ PROGRESS_FILE = os.path.join(
     "progress.json"
 )
 
-# Try progressively stronger LOCAL corruption.
+# Try weakest → strongest local corruption.
 LOCAL_SNRS_DB = [6.0, 3.0, 0.0]
 
-# Expand target interval slightly on both sides.
-# This avoids unrealistically sharp noise boundaries.
+# Expand target interval slightly.
 PAD_MS = 40
 
 # Deterministic Whisper decoding.
-WHISPER_TEMPERATURE = 0.0
-
-# DO NOT set best_of=0.
-# None/omitted is correct for greedy decoding.
-WHISPER_BEST_OF = None
-WHISPER_BEAM_SIZE = None
+TEMPERATURE = 0.0
+BEAM_SIZE = None
+BEST_OF = None
 
 
 # =========================================================
-# HELPERS
+# TEXT NORMALIZATION
 # =========================================================
 
-def normalize_word(word):
-    """
-    Normalize a Whisper word for matching.
-    """
+def normalize_word(x):
     return re.sub(
         r"[^a-z0-9]",
         "",
-        str(word).lower()
+        str(x).lower()
     )
 
 
-def normalize_phrase(text):
-    return re.sub(
-        r"[^a-z0-9 ]",
-        "",
-        str(text).lower()
-    ).strip()
+def normalize_text(x):
+    return " ".join(
+        normalize_word(w)
+        for w in str(x).split()
+        if normalize_word(w)
+    )
 
 
-def find_target_span(result, target_term):
-    """
-    Find the target term in Whisper word timestamps.
-
-    Handles both:
-        single word
-        multi-word phrase
-    """
-
-    target_words = [
-        normalize_word(x)
-        for x in str(target_term).split()
-        if normalize_word(x)
+def phrase_words(x):
+    return [
+        normalize_word(w)
+        for w in str(x).split()
+        if normalize_word(w)
     ]
 
-    if not target_words:
+
+# =========================================================
+# TARGET LIST
+# =========================================================
+
+def get_target_terms(row):
+
+    raw = str(row["target_terms"])
+
+    if raw.lower() in ("nan", "", "none"):
+        return []
+
+    return [
+        x.strip()
+        for x in raw.split(";")
+        if x.strip()
+    ]
+
+
+# =========================================================
+# FIND TARGET TIMESTAMP
+# =========================================================
+
+def find_target_span(
+    whisper_result,
+    target_term
+):
+
+    target = phrase_words(target_term)
+
+    if not target:
         return None
 
-    whisper_words = []
+    words = []
 
-    for segment in result.get("segments", []):
-        for w in segment.get("words", []):
-            word = normalize_word(w.get("word", ""))
+    for seg in whisper_result.get(
+        "segments", []
+    ):
+
+        for w in seg.get(
+            "words", []
+        ):
+
+            word = normalize_word(
+                w.get("word", "")
+            )
 
             if word:
-                whisper_words.append({
+
+                words.append({
                     "word": word,
                     "start": float(w["start"]),
                     "end": float(w["end"])
                 })
 
-    if not whisper_words:
-        return None
-
-    # -----------------------------------------------------
-    # Exact contiguous word match
-    # -----------------------------------------------------
-
+    # Exact phrase match.
     for i in range(
-        len(whisper_words) - len(target_words) + 1
+        len(words) - len(target) + 1
     ):
+
         candidate = [
-            whisper_words[i + j]["word"]
-            for j in range(len(target_words))
+            words[i + j]["word"]
+            for j in range(len(target))
         ]
 
-        if candidate == target_words:
+        if candidate == target:
 
-            start = whisper_words[i]["start"]
-            end = whisper_words[
-                i + len(target_words) - 1
-            ]["end"]
+            return (
+                words[i]["start"],
+                words[
+                    i + len(target) - 1
+                ]["end"]
+            )
 
-            return start, end
-
-    # -----------------------------------------------------
-    # Single-word fuzzy fallback
-    # -----------------------------------------------------
-
-    if len(target_words) == 1:
-
-        target = target_words[0]
+    # Fuzzy fallback for single terms.
+    if len(target) == 1:
 
         best = None
-        best_score = 0.0
+        best_score = 0
 
-        from difflib import SequenceMatcher
-
-        for w in whisper_words:
+        for w in words:
 
             score = SequenceMatcher(
                 None,
-                target,
+                target[0],
                 w["word"]
             ).ratio()
 
@@ -179,43 +193,73 @@ def find_target_span(result, target_term):
                 best_score = score
                 best = w
 
-        # Require reasonable lexical similarity.
-        if best is not None and best_score >= 0.60:
-            return best["start"], best["end"]
+        if (
+            best is not None
+            and best_score >= 0.60
+        ):
+
+            return (
+                best["start"],
+                best["end"]
+            )
 
     return None
 
 
-def add_local_noise(
+# =========================================================
+# ADD LOCAL NOISE TO MULTIPLE TARGET SPANS
+# =========================================================
+
+def corrupt_target_spans(
     audio,
     sr,
-    start_sec,
-    end_sec,
+    spans,
     snr_db
 ):
-    """
-    Add white Gaussian noise ONLY around the target term.
-    """
 
-    audio = audio.astype(np.float32).copy()
+    audio = audio.astype(
+        np.float32
+    ).copy()
 
-    start = max(
-        0,
-        int((start_sec * sr) - (PAD_MS / 1000 * sr))
-    )
-
-    end = min(
+    # Create one mask covering ALL target regions.
+    mask = np.zeros(
         len(audio),
-        int((end_sec * sr) + (PAD_MS / 1000 * sr))
+        dtype=np.float32
     )
 
-    if end <= start:
+    for start_sec, end_sec in spans:
+
+        start = max(
+            0,
+            int(
+                start_sec * sr
+                - PAD_MS / 1000 * sr
+            )
+        )
+
+        end = min(
+            len(audio),
+            int(
+                end_sec * sr
+                + PAD_MS / 1000 * sr
+            )
+        )
+
+        if end <= start:
+            continue
+
+        mask[start:end] = 1.0
+
+    # Nothing to corrupt.
+    if mask.sum() == 0:
         return audio
 
-    target = audio[start:end]
+    affected = audio[mask > 0]
 
     signal_rms = np.sqrt(
-        np.mean(target ** 2) + 1e-12
+        np.mean(
+            affected ** 2
+        ) + 1e-12
     )
 
     noise_rms = (
@@ -226,82 +270,210 @@ def add_local_noise(
     noise = np.random.normal(
         0,
         noise_rms,
-        size=len(target)
+        size=len(audio)
     ).astype(np.float32)
 
-    # -----------------------------------------------------
-    # Smooth fade-in / fade-out
-    # -----------------------------------------------------
+    # Smooth transitions at every target region.
+    for start_sec, end_sec in spans:
 
-    fade_samples = min(
-        int(0.04 * sr),
-        len(target) // 4
-    )
-
-    if fade_samples > 1:
-
-        fade_in = np.linspace(
-            0.0,
-            1.0,
-            fade_samples
+        start = max(
+            0,
+            int(
+                start_sec * sr
+                - PAD_MS / 1000 * sr
+            )
         )
 
-        fade_out = np.linspace(
-            1.0,
-            0.0,
-            fade_samples
+        end = min(
+            len(audio),
+            int(
+                end_sec * sr
+                + PAD_MS / 1000 * sr
+            )
         )
 
-        noise[:fade_samples] *= fade_in
-        noise[-fade_samples:] *= fade_out
+        fade = min(
+            int(0.04 * sr),
+            (end - start) // 4
+        )
 
-    corrupted_target = target + noise
+        if fade > 1:
 
-    # Prevent clipping.
-    corrupted_target = np.clip(
-        corrupted_target,
+            noise[
+                start:start + fade
+            ] *= np.linspace(
+                0, 1, fade
+            )
+
+            noise[
+                end - fade:end
+            ] *= np.linspace(
+                1, 0, fade
+            )
+
+    corrupted = audio + noise * mask
+
+    return np.clip(
+        corrupted,
         -1.0,
         1.0
     )
 
-    audio[start:end] = corrupted_target
 
-    return audio
+# =========================================================
+# CHECK WHICH TARGET TERMS SURVIVED
+# =========================================================
 
-
-def target_changed(
-    target_term,
-    clean_transcript,
-    corrupted_transcript
+def target_presence(
+    targets,
+    transcript
 ):
-    """
-    Conservative test for whether the target term disappeared
-    or changed in the corrupted transcription.
 
-    We compare normalized target presence rather than simply
-    checking whole-sentence WER.
-    """
-
-    target = normalize_phrase(target_term)
-
-    clean_text = normalize_phrase(
-        clean_transcript
+    text = normalize_text(
+        transcript
     )
 
-    corrupt_text = normalize_phrase(
-        corrupted_transcript
+    results = {}
+
+    for target in targets:
+
+        target_norm = normalize_text(
+            target
+        )
+
+        results[target] = (
+            target_norm in text
+        )
+
+    return results
+
+
+# =========================================================
+# TARGET-LEVEL METRICS
+# =========================================================
+
+def target_metrics(
+    targets,
+    reference_text,
+    hypothesis_text
+):
+
+    ref_presence = target_presence(
+        targets,
+        reference_text
     )
 
-    # If target wasn't actually present in clean decoding,
-    # this is not a valid target-error experiment.
-    if target not in clean_text:
-        return False
+    hyp_presence = target_presence(
+        targets,
+        hypothesis_text
+    )
 
-    # Target no longer present -> definite target corruption.
-    if target not in corrupt_text:
-        return True
+    tp = 0
+    fn = 0
+    fp = 0
 
-    return False
+    for target in targets:
+
+        ref = ref_presence[target]
+        hyp = hyp_presence[target]
+
+        if ref and hyp:
+            tp += 1
+
+        elif ref and not hyp:
+            fn += 1
+
+        elif not ref and hyp:
+            fp += 1
+
+    precision = (
+        tp / (tp + fp)
+        if tp + fp > 0
+        else 0.0
+    )
+
+    recall = (
+        tp / (tp + fn)
+        if tp + fn > 0
+        else 0.0
+    )
+
+    return (
+        tp,
+        fp,
+        fn,
+        precision,
+        recall
+    )
+
+
+# =========================================================
+# DOMAIN-TERM WER
+# =========================================================
+
+def domain_term_wer(
+    targets,
+    reference_text,
+    hypothesis_text
+):
+
+    ref_tokens = []
+
+    for target in targets:
+
+        ref_tokens.extend(
+            phrase_words(target)
+        )
+
+    ref_tokens = list(
+        dict.fromkeys(ref_tokens)
+    )
+
+    if not ref_tokens:
+        return np.nan
+
+    hyp_tokens = phrase_words(
+        hypothesis_text
+    )
+
+    # Count reference domain tokens
+    # that are absent from the hypothesis.
+    ref_counts = {}
+
+    for token in ref_tokens:
+        ref_counts[token] = (
+            ref_counts.get(token, 0) + 1
+        )
+
+    hyp_counts = {}
+
+    for token in hyp_tokens:
+        hyp_counts[token] = (
+            hyp_counts.get(token, 0) + 1
+        )
+
+    substitutions_or_deletions = 0
+
+    for token, count in ref_counts.items():
+
+        matched = min(
+            count,
+            hyp_counts.get(token, 0)
+        )
+
+        substitutions_or_deletions += (
+            count - matched
+        )
+
+    n = sum(
+        ref_counts.values()
+    )
+
+    return (
+        substitutions_or_deletions / n
+        if n > 0
+        else np.nan
+    )
 
 
 # =========================================================
@@ -330,66 +502,16 @@ def main():
         exist_ok=True
     )
 
-    print("Loading dataset...")
-
-    df = pd.read_csv(DATASET_CSV)
-
-    target_df = pd.read_csv(TARGET_CSV)
-
     print(
-        f"Dataset rows: {len(df)}"
+        "Loading datasets..."
     )
 
-    print(
-        f"Target rows: {len(target_df)}"
+    df = pd.read_csv(
+        DATASET_CSV
     )
 
-    # -----------------------------------------------------
-    # Merge target terms
-    # -----------------------------------------------------
-
-    required_target_cols = [
-        "sample_id"
-    ]
-
-    for c in required_target_cols:
-        if c not in target_df.columns:
-            raise ValueError(
-                f"Target CSV missing column: {c}"
-            )
-
-    # Automatically find likely target-term column.
-    possible_term_cols = [
-        "target_term",
-        "domain_term",
-        "target",
-        "term"
-    ]
-
-    target_col = None
-
-    for c in possible_term_cols:
-        if c in target_df.columns:
-            target_col = c
-            break
-
-    if target_col is None:
-        raise ValueError(
-            "Could not find target-term column. "
-            "Expected one of: "
-            + str(possible_term_cols)
-        )
-
-    print(
-        f"Using target-term column: {target_col}"
-    )
-
-    target_df = target_df[
-        ["sample_id", target_col]
-    ].rename(
-        columns={
-            target_col: "target_term"
-        }
+    target_df = pd.read_csv(
+        TARGET_CSV
     )
 
     df["sample_id"] = (
@@ -401,22 +523,35 @@ def main():
     )
 
     df = df.merge(
-        target_df,
+        target_df[
+            [
+                "sample_id",
+                "target_terms",
+                "target_term_count",
+                "target_sources"
+            ]
+        ],
         on="sample_id",
         how="left"
     )
 
+    print(
+        "Total samples:",
+        len(df)
+    )
+
     # -----------------------------------------------------
-    # Resume
+    # RESUME
     # -----------------------------------------------------
 
     completed = set()
 
-    if os.path.exists(PROGRESS_FILE):
+    if os.path.exists(
+        PROGRESS_FILE
+    ):
 
         with open(
-            PROGRESS_FILE,
-            "r"
+            PROGRESS_FILE
         ) as f:
 
             completed = set(
@@ -425,7 +560,9 @@ def main():
 
     results = []
 
-    if os.path.exists(OUTPUT_CSV):
+    if os.path.exists(
+        OUTPUT_CSV
+    ):
 
         results = pd.read_csv(
             OUTPUT_CSV
@@ -433,13 +570,8 @@ def main():
             "records"
         )
 
-    print(
-        f"Already completed: "
-        f"{len(completed)}"
-    )
-
     # -----------------------------------------------------
-    # Load Whisper
+    # LOAD WHISPER
     # -----------------------------------------------------
 
     device = (
@@ -449,7 +581,8 @@ def main():
     )
 
     print(
-        f"Loading Whisper on {device}..."
+        "Loading Whisper on",
+        device
     )
 
     model = whisper.load_model(
@@ -458,13 +591,13 @@ def main():
     )
 
     # -----------------------------------------------------
-    # Process
+    # PROCESS
     # -----------------------------------------------------
 
     for _, row in tqdm(
         df.iterrows(),
         total=len(df),
-        desc="Domain-target ASR corruption"
+        desc="Multi-target ASR corruption"
     ):
 
         sample_id = str(
@@ -474,9 +607,9 @@ def main():
         if sample_id in completed:
             continue
 
-        target_term = str(
-            row["target_term"]
-        ).strip()
+        targets = get_target_terms(
+            row
+        )
 
         audio_path = os.path.join(
             AUDIO_DIR,
@@ -485,13 +618,13 @@ def main():
 
         if (
             not os.path.exists(audio_path)
-            or not target_term
-            or target_term.lower() == "nan"
+            or len(targets) == 0
         ):
+
             continue
 
         # -------------------------------------------------
-        # Load audio
+        # LOAD AUDIO
         # -------------------------------------------------
 
         audio, sr = sf.read(
@@ -499,8 +632,7 @@ def main():
         )
 
         if audio.ndim > 1:
-            audio = np.mean(
-                audio,
+            audio = audio.mean(
                 axis=1
             )
 
@@ -509,14 +641,14 @@ def main():
         )
 
         # -------------------------------------------------
-        # CLEAN WHISPER TRANSCRIPTION
+        # CLEAN TRANSCRIPTION
         # -------------------------------------------------
 
         clean_result = model.transcribe(
             audio_path,
-            temperature=0.0,
-            beam_size=None,
-            best_of=None,
+            temperature=TEMPERATURE,
+            beam_size=BEAM_SIZE,
+            best_of=BEST_OF,
             word_timestamps=True,
             language="en"
         )
@@ -526,13 +658,11 @@ def main():
             .strip()
         )
 
-        clean_json_path = os.path.join(
-            CLEAN_JSON_DIR,
-            f"{sample_id}.json"
-        )
-
         with open(
-            clean_json_path,
+            os.path.join(
+                CLEAN_JSON_DIR,
+                f"{sample_id}.json"
+            ),
             "w"
         ) as f:
 
@@ -542,144 +672,153 @@ def main():
             )
 
         # -------------------------------------------------
-        # LOCATE DOMAIN TERM
+        # FIND ALL TARGET SPANS
         # -------------------------------------------------
 
-        span = find_target_span(
-            clean_result,
-            target_term
-        )
+        spans = []
+        found_targets = []
 
-        if span is None:
+        for target in targets:
 
-            record = {
-                "sample_id": sample_id,
-                "scenario_id": row["scenario_id"],
-                "split": row["split"],
-                "ground_truth": row["transcript"],
-                "target_term": target_term,
-                "clean_whisper_transcript":
-                    clean_transcript,
-                "corrupted_whisper_transcript":
-                    "",
-                "target_found": 0,
-                "target_corrupted": 0,
-                "selected_snr_db": np.nan,
-                "wer_clean":
-                    jiwer.wer(
-                        str(row["transcript"]),
-                        clean_transcript
-                    ),
-                "wer_corrupted": np.nan,
-                "temperature": 0.0,
-                "beam_size": None,
-                "best_of": None
-            }
+            span = find_target_span(
+                clean_result,
+                target
+            )
 
-            results.append(record)
-            completed.add(sample_id)
-            continue
+            if span is not None:
 
-        start_sec, end_sec = span
-
-        selected = None
+                spans.append(span)
+                found_targets.append(
+                    target
+                )
 
         # -------------------------------------------------
-        # TRY LOCAL SNR LEVELS
+        # TRY LOCAL CORRUPTION
         # -------------------------------------------------
 
-        for snr_db in LOCAL_SNRS_DB:
+        selected_snr = np.nan
+        corrupted_transcript = ""
+        corrupted_result = None
+        target_corrupted = []
 
-            corrupted_audio = add_local_noise(
-                audio,
-                sr,
-                start_sec,
-                end_sec,
-                snr_db
-            )
+        if spans:
 
-            temp_path = os.path.join(
-                CORRUPTED_AUDIO_DIR,
-                f"{sample_id}_temp.wav"
-            )
+            for snr_db in LOCAL_SNRS_DB:
 
-            sf.write(
-                temp_path,
-                corrupted_audio,
-                sr
-            )
+                corrupted_audio = (
+                    corrupt_target_spans(
+                        audio,
+                        sr,
+                        spans,
+                        snr_db
+                    )
+                )
 
-            corrupted_result = model.transcribe(
-                temp_path,
-                temperature=0.0,
-                beam_size=None,
-                best_of=None,
-                word_timestamps=True,
-                language="en"
-            )
+                temp_path = os.path.join(
+                    CORRUPTED_AUDIO_DIR,
+                    f"{sample_id}_temp.wav"
+                )
 
-            corrupted_transcript = (
-                corrupted_result["text"]
-                .strip()
-            )
+                sf.write(
+                    temp_path,
+                    corrupted_audio,
+                    sr
+                )
 
-            changed = target_changed(
-                target_term,
+                result = model.transcribe(
+                    temp_path,
+                    temperature=TEMPERATURE,
+                    beam_size=BEAM_SIZE,
+                    best_of=BEST_OF,
+                    word_timestamps=True,
+                    language="en"
+                )
+
+                transcript = (
+                    result["text"]
+                    .strip()
+                )
+
+                presence = target_presence(
+                    found_targets,
+                    transcript
+                )
+
+                changed = [
+                    t for t in found_targets
+                    if not presence[t]
+                ]
+
+                if changed:
+
+                    selected_snr = snr_db
+                    corrupted_transcript = transcript
+                    corrupted_result = result
+                    target_corrupted = changed
+
+                    final_path = os.path.join(
+                        CORRUPTED_AUDIO_DIR,
+                        f"{sample_id}.wav"
+                    )
+
+                    shutil.copy2(
+                        temp_path,
+                        final_path
+                    )
+
+                    break
+
+        # -------------------------------------------------
+        # TARGET METRICS
+        # -------------------------------------------------
+
+        tp, fp, fn, precision, recall = (
+            target_metrics(
+                found_targets,
                 clean_transcript,
                 corrupted_transcript
             )
+        )
 
-            if changed:
-
-                final_audio_path = os.path.join(
-                    CORRUPTED_AUDIO_DIR,
-                    f"{sample_id}.wav"
-                )
-
-                shutil.copy2(
-                    temp_path,
-                    final_audio_path
-                )
-
-                selected = (
-                    snr_db,
-                    corrupted_transcript,
-                    corrupted_result,
-                    final_audio_path
-                )
-
-                break
+        ds_wer = domain_term_wer(
+            found_targets,
+            clean_transcript,
+            corrupted_transcript
+        )
 
         # -------------------------------------------------
-        # RECORD RESULT
+        # STANDARD WER
         # -------------------------------------------------
 
-        if selected is None:
+        ground_truth = str(
+            row["transcript"]
+        )
 
-            selected_snr = np.nan
-            corrupted_transcript = ""
-            corrupted_result = None
+        clean_wer = jiwer.wer(
+            ground_truth,
+            clean_transcript
+        )
 
-            target_corrupted = 0
-
-        else:
-
-            (
-                selected_snr,
-                corrupted_transcript,
-                corrupted_result,
-                final_audio_path
-            ) = selected
-
-            target_corrupted = 1
-
-            corrupted_json_path = os.path.join(
-                CORRUPTED_JSON_DIR,
-                f"{sample_id}.json"
+        corrupted_wer = (
+            jiwer.wer(
+                ground_truth,
+                corrupted_transcript
             )
+            if corrupted_transcript
+            else np.nan
+        )
+
+        # -------------------------------------------------
+        # SAVE CORRUPTED JSON
+        # -------------------------------------------------
+
+        if corrupted_result is not None:
 
             with open(
-                corrupted_json_path,
+                os.path.join(
+                    CORRUPTED_JSON_DIR,
+                    f"{sample_id}.json"
+                ),
                 "w"
             ) as f:
 
@@ -689,26 +828,8 @@ def main():
                 )
 
         # -------------------------------------------------
-        # METRICS
+        # RECORD
         # -------------------------------------------------
-
-        ground_truth = str(
-            row["transcript"]
-        )
-
-        wer_clean = jiwer.wer(
-            ground_truth,
-            clean_transcript
-        )
-
-        wer_corrupted = (
-            jiwer.wer(
-                ground_truth,
-                corrupted_transcript
-            )
-            if corrupted_transcript
-            else np.nan
-        )
 
         record = {
 
@@ -730,14 +851,26 @@ def main():
             "ground_truth":
                 ground_truth,
 
-            "target_term":
-                target_term,
+            "target_terms":
+                "; ".join(targets),
 
-            "target_start_sec":
-                start_sec,
+            "target_term_count":
+                len(targets),
 
-            "target_end_sec":
-                end_sec,
+            "targets_found":
+                len(found_targets),
+
+            "targets_corrupted":
+                len(target_corrupted),
+
+            "corrupted_target_terms":
+                "; ".join(target_corrupted),
+
+            "target_start_end_count":
+                len(spans),
+
+            "selected_snr_db":
+                selected_snr,
 
             "clean_whisper_transcript":
                 clean_transcript,
@@ -745,29 +878,38 @@ def main():
             "corrupted_whisper_transcript":
                 corrupted_transcript,
 
-            "target_found":
-                1,
+            "clean_WER":
+                clean_wer,
 
-            "target_corrupted":
-                target_corrupted,
+            "corrupted_WER":
+                corrupted_wer,
 
-            "selected_snr_db":
-                selected_snr,
+            "domain_term_WER":
+                ds_wer,
 
-            "wer_clean":
-                wer_clean,
+            "domain_term_TP":
+                tp,
 
-            "wer_corrupted":
-                wer_corrupted,
+            "domain_term_FP":
+                fp,
+
+            "domain_term_FN":
+                fn,
+
+            "domain_term_precision":
+                precision,
+
+            "domain_term_recall":
+                recall,
 
             "temperature":
-                0.0,
+                TEMPERATURE,
 
             "beam_size":
-                None,
+                BEAM_SIZE,
 
             "best_of":
-                None,
+                BEST_OF,
 
             "language":
                 clean_result.get(
@@ -777,18 +919,13 @@ def main():
         }
 
         results.append(record)
-
-        completed.add(
-            sample_id
-        )
+        completed.add(sample_id)
 
         # -------------------------------------------------
         # CHECKPOINT
         # -------------------------------------------------
 
-        if (
-            len(completed) % 25 == 0
-        ):
+        if len(completed) % 25 == 0:
 
             pd.DataFrame(
                 results
@@ -811,9 +948,11 @@ def main():
     # FINAL SAVE
     # -----------------------------------------------------
 
-    pd.DataFrame(
+    result_df = pd.DataFrame(
         results
-    ).to_csv(
+    )
+
+    result_df.to_csv(
         OUTPUT_CSV,
         index=False
     )
@@ -828,12 +967,8 @@ def main():
             f
         )
 
-    result_df = pd.DataFrame(
-        results
-    )
-
     print("\n====================================")
-    print("DOMAIN-TERM ASR STRESS TEST COMPLETE")
+    print("MULTI-TARGET ASR STRESS TEST")
     print("====================================")
 
     print(
@@ -842,32 +977,57 @@ def main():
     )
 
     print(
-        "Target terms found:",
-        result_df["target_found"].sum()
+        "Total target terms:",
+        result_df["target_term_count"].sum()
     )
 
     print(
-        "Target terms actually corrupted:",
-        result_df["target_corrupted"].sum()
+        "Total targets found:",
+        result_df["targets_found"].sum()
+    )
+
+    print(
+        "Total targets corrupted:",
+        result_df["targets_corrupted"].sum()
     )
 
     print(
         "Target corruption rate:",
-        result_df["target_corrupted"].mean()
+        result_df["targets_corrupted"].sum()
+        /
+        max(
+            result_df["targets_found"].sum(),
+            1
+        )
     )
 
     print(
         "Mean clean WER:",
-        result_df["wer_clean"].mean()
+        result_df["clean_WER"].mean()
     )
 
     print(
         "Mean corrupted WER:",
-        result_df["wer_corrupted"].mean()
+        result_df["corrupted_WER"].mean()
     )
 
     print(
-        "\nResults:",
+        "Mean domain-term WER:",
+        result_df["domain_term_WER"].mean()
+    )
+
+    print(
+        "Domain-term precision:",
+        result_df["domain_term_precision"].mean()
+    )
+
+    print(
+        "Domain-term recall:",
+        result_df["domain_term_recall"].mean()
+    )
+
+    print(
+        "\nSaved:",
         OUTPUT_CSV
     )
 
