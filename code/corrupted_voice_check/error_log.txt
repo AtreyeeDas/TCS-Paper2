@@ -1,15 +1,22 @@
-(asil_nlu_master) spark2@01HW2722098:~/users/intern/Atreyee-Das/NLU_Robust_Experiment/code$ python error_detector/decoder_only_detected_diag.py
 ============================================================
 PART 1: ARTIFACT AUDIT & LOADING
 ============================================================
-[+] Loading Whisper from /home/spark2/Models/base.en.pt...
-[+] Loading Voice-NLU Artifacts...
-[+] Loading Text-NLU Artifacts...
-[+] Loading Existing Detector B...
-[+] Loaded Detector B Threshold: 0.5
+Voice-NLU expected input dimension: 128
+Text-NLU expected input dimension: 128
+Detector B expected feature count: 51
+Detector B threshold: 0.05
+Number of dataset terms used for exclusion: 442
+Number of candidate distractors remaining: 28 / 50
+Encoder fixed-decoding implementation: PASS (using enc_out passed to whisper.decode)
+
+============================================================
+PART 24: SANITY CHECK (FIRST 10 SAMPLES)
+============================================================
+Generating Fixed-Encoder Candidates: 100%|██████████████████████████| 300/300 [00:00<00:00, 45003.26it/s]
 Traceback (most recent call last):
-  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/error_detector/decoder_only_detected_diag.py", line 458, in <module>
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/error_detector/decoder_only_detected_diag.py", line 419, in <module>
     run_diagnostic()
-  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/error_detector/decoder_only_detected_diag.py", line 250, in run_diagnostic
-    raise ValueError("Detector B does not have feature_names_in_. Cannot guarantee strict runtime feature ordering.")
-ValueError: Detector B does not have feature_names_in_. Cannot guarantee strict runtime feature ordering.
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/error_detector/decoder_only_detected_diag.py", line 368, in run_diagnostic
+    audit_data["actual_runtime_feature_count"] = feat_vector.shape[1]
+                                                 ^^^^^^^^^^^
+UnboundLocalError: cannot access local variable 'feat_vector' where it is not associated with a value
