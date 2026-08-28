@@ -1,0 +1,213 @@
+============================================================
+PART 1: ARTIFACT AUDIT & LOADING
+============================================================
+[+] Found 300 valid audio samples for diagnostic from 300 candidates.
+Voice-NLU expected input dimension: 128
+Text-NLU expected input dimension: 128
+Detector B expected feature count: 51
+Detector B threshold: 0.39000000000000007
+Number of dataset terms used for exclusion: 908
+Number of candidate distractors remaining: 26 / 50
+Encoder fixed-decoding implementation: PASS (using enc_out passed to whisper.decode)
+
+============================================================
+PART 24: SANITY CHECK (FIRST 10 SAMPLES)
+============================================================
+Generating Fixed-Encoder Candidates:   0%|                                                                | 0/300 [00:00<?, ?it/s]
+--- CONTROLLED SANITY CHECK 1 ---
+Sample: nlu_0221_02 | Target: loan-to-value ratio
+Clean transcript (L0): The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
+Level 1 corrupted: The team is evaluating hospital revenue cycle in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
+Level 2 corrupted: The team is evaluating industrial procurement in the context of mortgage, with particular attention to the reported issue. During the most recent assessment, the person handling the matter while considering the current evidence. The record specifically references loan-to-value ratio.
+Voice posterior — clean: Topic=mortgage underwriting (0.709)
+Voice posterior — Level 1: Topic=mortgage underwriting (0.709)
+Voice posterior — Level 2: Topic=mortgage underwriting (0.709)
+Voice posterior invariant: PASS
+Text posterior — clean: Topic=loan-to-value ratio (0.996)
+Text posterior — Level 1: Topic=ST elevation (0.786)
+Text posterior — Level 2: Topic=AML screening (0.371)
+Detector B probability — clean: 0.772
+Detector B probability — Level 1: 1.000
+Detector B probability — Level 2: 1.000
+Generating Fixed-Encoder Candidates:   0%|▏                                                       | 1/300 [00:06<33:04,  6.64s/it]
+--- CONTROLLED SANITY CHECK 2 ---
+Sample: nlu_0225_02 | Target: loan-to-value ratio
+Clean transcript (L0): The team is evaluating loan-to-value ratio in the context of mortgage, with particular attention to the reported issue. After the recent update, the assigned professional, while considering the current evidence. The record specifically references loan-to-value ratio.
+Level 1 corrupted: The team is evaluating hospital revenue cycle in the context of mortgage, with particular attention to the reported issue. After the recent update, the assigned professional, while considering the current evidence. The record specifically references loan-to-value ratio.
+Level 2 corrupted: The team is evaluating payer reconciliation in the context of mortgage, with particular attention to the reported issue. After the recent update, the assigned professional, while considering the current evidence. The record specifically references loan-to-value ratio.
+Voice posterior — clean: Topic=loan-to-value ratio (0.624)
+Voice posterior — Level 1: Topic=loan-to-value ratio (0.624)
+Voice posterior — Level 2: Topic=loan-to-value ratio (0.624)
+Voice posterior invariant: PASS
+Text posterior — clean: Topic=loan-to-value ratio (0.994)
+Text posterior — Level 1: Topic=ST elevation (0.761)
+Text posterior — Level 2: Topic=loan-to-value ratio (0.951)
+Detector B probability — clean: 0.184
+Detector B probability — Level 1: 1.000
+Detector B probability — Level 2: 0.696
+Generating Fixed-Encoder Candidates:   1%|▎                                                       | 2/300 [00:11<26:46,  5.39s/it]
+--- CONTROLLED SANITY CHECK 3 ---
+Sample: nlu_0406_01 | Target: discovery
+Clean transcript (L0): The current findings was reviewed in relation to discovery and document production. At the current stage, the case team before the next decision.
+Level 1 corrupted: The current findings was reviewed in relation to payment confirmation and document production. At the current stage, the case team before the next decision.
+Level 2 corrupted: The current findings was reviewed in relation to order confirmation and document production. At the current stage, the case team before the next decision.
+Voice posterior — clean: Topic=discovery (0.421)
+Voice posterior — Level 1: Topic=discovery (0.421)
+Voice posterior — Level 2: Topic=discovery (0.421)
+Voice posterior invariant: PASS
+Text posterior — clean: Topic=discovery (0.998)
+Text posterior — Level 1: Topic=credit risk (0.726)
+Text posterior — Level 2: Topic=jurisdiction (0.910)
+Detector B probability — clean: 0.284
+Detector B probability — Level 1: 1.000
+Detector B probability — Level 2: 0.998
+Generating Fixed-Encoder Candidates:   1%|▌                                                       | 3/300 [00:13<20:32,  4.15s/it]
+--- CONTROLLED SANITY CHECK 4 ---
+Sample: nlu_0105_06 | Target: migraine with aura
+Clean transcript (L0): The available evidence was considered before deciding how to address the current status of migraine with aura. After the latest information became available, the reviewing group, during the present round of discussion.
+Level 1 corrupted: The available evidence was considered before deciding how to address the current status of pulmonary embolism. After the latest information became available, the reviewing group, during the present round of discussion.
+Level 2 corrupted: The available evidence was considered before deciding how to address the current status of pericardial inflammation. After the latest information became available, the reviewing group, during the present round of discussion.
+Voice posterior — clean: Topic=migraine with aura (0.997)
+Voice posterior — Level 1: Topic=migraine with aura (0.997)
+Voice posterior — Level 2: Topic=migraine with aura (0.997)
+Voice posterior invariant: PASS
+Text posterior — clean: Topic=migraine with aura (0.972)
+Text posterior — Level 1: Topic=ventricular tachycardia (0.971)
+Text posterior — Level 2: Topic=acute myocardial infarction (0.505)
+Detector B probability — clean: 0.374
+Detector B probability — Level 1: 1.000
+Detector B probability — Level 2: 1.000
+Generating Fixed-Encoder Candidates:   1%|▋                                                       | 4/300 [00:17<18:57,  3.84s/it]
+--- CONTROLLED SANITY CHECK 5 ---
+Sample: nlu_0235_05 | Target: non-performing asset
+Clean transcript (L0): The specialist discussed the documented issue involving loan delinquency during the latest response. After the recent update, the assigned professional, while comparing the available options. The record specifically references non-performing asset.
+Level 1 corrupted: The specialist discussed the documented issue involving loan delinquency during the latest response. After the recent update, the assigned professional, while comparing the available options. The record specifically references algorithmic trading.
+Level 2 corrupted: The specialist discussed the documented issue involving loan delinquency during the latest response. After the recent update, the assigned professional, while comparing the available options. The record specifically references electronic settlement.
+Voice posterior — clean: Topic=non-performing asset (0.998)
+Voice posterior — Level 1: Topic=non-performing asset (0.998)
+Voice posterior — Level 2: Topic=non-performing asset (0.998)
+Voice posterior invariant: PASS
+Text posterior — clean: Topic=non-performing asset (0.888)
+Text posterior — Level 1: Topic=credit risk (0.730)
+Text posterior — Level 2: Topic=credit risk (0.855)
+Detector B probability — clean: 0.991
+Detector B probability — Level 1: 1.000
+Detector B probability — Level 2: 1.000
+Generating Fixed-Encoder Candidates:   2%|▉                                                       | 5/300 [00:20<18:44,  3.81s/it]
+--- CONTROLLED SANITY CHECK 6 ---
+Sample: nlu_0234_10 | Target: non-performing asset
+Clean transcript (L0): Further case is needed before a final decision is made about the decision surrounding default, following the previous discussion, the relevant team, before the next decision. The record specifically references non-performing asset.
+Level 1 corrupted: Further case is needed before a final decision is made about the decision surrounding default, following the previous discussion, the relevant team, before the next decision. The record specifically references machinery leasing.
+Level 2 corrupted: Further case is needed before a final decision is made about the decision surrounding default, following the previous discussion, the relevant team, before the next decision. The record specifically references cybersecurity financing.
+Voice posterior — clean: Topic=non-performing asset (0.994)
+Voice posterior — Level 1: Topic=non-performing asset (0.994)
+Voice posterior — Level 2: Topic=non-performing asset (0.994)
+Voice posterior invariant: PASS
+Text posterior — clean: Topic=non-performing asset (0.944)
+Text posterior — Level 1: Topic=credit risk (0.952)
+Text posterior — Level 2: Topic=credit risk (0.974)
+Detector B probability — clean: 0.902
+Detector B probability — Level 1: 1.000
+Detector B probability — Level 2: 1.000
+Generating Fixed-Encoder Candidates:   2%|█▎                                                      | 7/300 [00:27<17:28,  3.58s/it]
+--- CONTROLLED SANITY CHECK 7 ---
+Sample: nlu_0380_01 | Target: plaintiff
+Clean transcript (L0): The current findings was reviewed in relation to plaintiff and claim. As part of the current review, the relevant team, while comparing the available options.
+Level 1 corrupted: The current findings was reviewed in relation to order confirmation and claim. As part of the current review, the relevant team, while comparing the available options.
+Level 2 corrupted: The current findings was reviewed in relation to payment confirmation and claim. As part of the current review, the relevant team, while comparing the available options.
+Voice posterior — clean: Topic=plaintiff (0.977)
+Voice posterior — Level 1: Topic=plaintiff (0.977)
+Voice posterior — Level 2: Topic=plaintiff (0.977)
+Voice posterior invariant: PASS
+Text posterior — clean: Topic=plaintiff (0.986)
+Text posterior — Level 1: Topic=jurisdiction (0.971)
+Text posterior — Level 2: Topic=credit risk (0.962)
+Detector B probability — clean: 0.380
+Detector B probability — Level 1: 0.999
+Detector B probability — Level 2: 1.000
+Generating Fixed-Encoder Candidates:   3%|█▍                                                      | 8/300 [00:30<16:15,  3.34s/it]
+--- CONTROLLED SANITY CHECK 8 ---
+Sample: nlu_0007_02 | Target: myocardial
+Clean transcript (L0): The team is evaluating myocardial ischemia in the context of coronary occlusion, with particular attention to the reported issue. After the recent update, the responsible specialist, during the present round of discussion. The record specifically references myocardial ischemia.
+Level 1 corrupted: The team is evaluating pericardial inflammation ischemia in the context of coronary occlusion, with particular attention to the reported issue. After the recent update, the responsible specialist, during the present round of discussion. The record specifically references myocardial ischemia.
+Level 2 corrupted: The team is evaluating pulmonary embolism ischemia in the context of coronary occlusion, with particular attention to the reported issue. After the recent update, the responsible specialist, during the present round of discussion. The record specifically references myocardial ischemia.
+Voice posterior — clean: Topic=acute myocardial infarction (0.996)
+Voice posterior — Level 1: Topic=acute myocardial infarction (0.996)
+Voice posterior — Level 2: Topic=acute myocardial infarction (0.996)
+Voice posterior invariant: PASS
+Text posterior — clean: Topic=acute myocardial infarction (0.958)
+Text posterior — Level 1: Topic=acute myocardial infarction (0.942)
+Text posterior — Level 2: Topic=acute myocardial infarction (0.390)
+Detector B probability — clean: 0.814
+Detector B probability — Level 1: 0.989
+Detector B probability — Level 2: 1.000
+Generating Fixed-Encoder Candidates:   3%|█▋                                                      | 9/300 [00:35<18:39,  3.85s/it]
+--- CONTROLLED SANITY CHECK 9 ---
+Sample: nlu_0559_05 | Target: reminder
+Clean transcript (L0): Can you tell me how to set a personal reminder given in the current round of review, the responsible specialist, while considering the current evidence?
+Level 1 corrupted: Can you tell me how to set a personal payment confirmation given in the current round of review, the responsible specialist, while considering the current evidence?
+Level 2 corrupted: Can you tell me how to set a personal order confirmation given in the current round of review, the responsible specialist, while considering the current evidence?
+Voice posterior — clean: Topic=NONE (1.000)
+Voice posterior — Level 1: Topic=NONE (1.000)
+Voice posterior — Level 2: Topic=NONE (1.000)
+Voice posterior invariant: PASS
+Text posterior — clean: Topic=NONE (1.000)
+Text posterior — Level 1: Topic=NONE (1.000)
+Text posterior — Level 2: Topic=NONE (1.000)
+Detector B probability — clean: 0.417
+Detector B probability — Level 1: 1.000
+Detector B probability — Level 2: 0.883
+Generating Fixed-Encoder Candidates:   4%|██▏                                                    | 12/300 [00:45<16:37,  3.46s/it]
+--- CONTROLLED SANITY CHECK 10 ---
+Sample: nlu_0353_08 | Target: liquidated damages
+Clean transcript (L0): The case involves the reported concern involving liquidated damages and the relevant, relevant records is being assessed, as part of the current review, the reviewing organization, before the next decision. The record specifically references liquidated damages.
+Level 1 corrupted: The case involves the reported concern involving order confirmation and the relevant, relevant records is being assessed, as part of the current review, the reviewing organization, before the next decision. The record specifically references liquidated damages.
+Level 2 corrupted: The case involves the reported concern involving payment confirmation and the relevant, relevant records is being assessed, as part of the current review, the reviewing organization, before the next decision. The record specifically references liquidated damages.
+Voice posterior — clean: Topic=liquidated damages (0.970)
+Voice posterior — Level 1: Topic=liquidated damages (0.970)
+Voice posterior — Level 2: Topic=liquidated damages (0.970)
+Voice posterior invariant: PASS
+Text posterior — clean: Topic=liquidated damages (0.984)
+Text posterior — Level 1: Topic=representations and warranties (0.499)
+Text posterior — Level 2: Topic=representations and warranties (0.369)
+Detector B probability — clean: 0.214
+Detector B probability — Level 1: 1.000
+Detector B probability — Level 2: 1.000
+Generating Fixed-Encoder Candidates:  80%|███████████████████████████████████████████▏          | 240/300 [13:39<01:47,  1.78s/itGenerating Fixed-Encoder Candidates:  80%|███████████████████████████████████████████▍          | 241/300 [13:40<01:38,  1.68s/itGenerating Fixed-Encoder Candidates:  81%|███████████████████████████████████████████▌          | 242/300 [13:42<01:39,  1.72s/itGenerating Fixed-Encoder Candidates:  81%|███████████████████████████████████████████▋          | 243/300 [13:43<01:33,  1.63s/itGenerating Fixed-Encoder Candidates:  81%|███████████████████████████████████████████▉          | 244/300 [13:44<01:24,  1.51s/itGenerating Fixed-Encoder Candidates:  82%|████████████████████████████████████████████          | 245/300 [13:46<01:29,  1.63s/itGenerating Fixed-Encoder Candidates:  82%|████████████████████████████████████████████▎         | 246/300 [13:48<01:28,  1.64s/itGenerating Fixed-Encoder Candidates:  82%|████████████████████████████████████████████▍         | 247/300 [13:49<01:20,  1.53s/itGenerating Fixed-Encoder Candidates:  83%|████████████████████████████████████████████▋         | 248/300 [13:51<01:18,  1.51s/itGenerating Fixed-Encoder Candidates:  83%|████████████████████████████████████████████▊         | 249/300 [13:53<01:25,  1.68s/itGenerating Fixed-Encoder Candidates:  83%|█████████████████████████████████████████████         | 250/300 [13:54<01:21,  1.63s/itGenerating Fixed-Encoder Candidates:  84%|█████████████████████████████████████████████▏        | 251/300 [13:56<01:20,  1.64s/itGenerating Fixed-Encoder Candidates:  84%|█████████████████████████████████████████████▎        | 252/300 [13:57<01:13,  1.54s/itGenerating Fixed-Encoder Candidates:  84%|█████████████████████████████████████████████▌        | 253/300 [13:59<01:07,  1.44s/itGenerating Fixed-Encoder Candidates:  85%|█████████████████████████████████████████████▋        | 254/300 [14:00<01:11,  1.56s/itGenerating Fixed-Encoder Candidates:  85%|█████████████████████████████████████████████▉        | 255/300 [14:01<01:03,  1.41s/itGenerating Fixed-Encoder Candidates:  85%|██████████████████████████████████████████████        | 256/300 [14:03<01:05,  1.50s/itGenerating Fixed-Encoder Candidates:  86%|██████████████████████████████████████████████▎       | 257/300 [14:05<01:07,  1.58s/itGenerating Fixed-Encoder Candidates:  86%|██████████████████████████████████████████████▍       | 258/300 [14:07<01:08,  1.63s/itGenerating Fixed-Encoder Candidates:  86%|██████████████████████████████████████████████▌       | 259/300 [14:09<01:09,  1.70s/itGenerating Fixed-Encoder Candidates:  87%|██████████████████████████████████████████████▊       | 260/300 [14:10<01:06,  1.66s/itGenerating Fixed-Encoder Candidates:  87%|██████████████████████████████████████████████▉       | 261/300 [14:11<00:58,  1.50s/itGenerating Fixed-Encoder Candidates:  87%|███████████████████████████████████████████████▏      | 262/300 [14:13<00:54,  1.44s/itGenerating Fixed-Encoder Candidates:  88%|███████████████████████████████████████████████▎      | 263/300 [14:14<00:51,  1.40s/itGenerating Fixed-Encoder Candidates:  88%|███████████████████████████████████████████████▌      | 264/300 [14:15<00:50,  1.41s/itGenerating Fixed-Encoder Candidates:  88%|███████████████████████████████████████████████▋      | 265/300 [14:16<00:45,  1.30s/itGenerating Fixed-Encoder Candidates:  89%|███████████████████████████████████████████████▉      | 266/300 [14:17<00:42,  1.26s/itGenerating Fixed-Encoder Candidates:  89%|████████████████████████████████████████████████      | 267/300 [14:19<00:43,  1.33s/itGenerating Fixed-Encoder Candidates:  89%|████████████████████████████████████████████████▏     | 268/300 [14:20<00:41,  1.29s/itGenerating Fixed-Encoder Candidates:  90%|████████████████████████████████████████████████▍     | 269/300 [14:22<00:45,  1.45s/itGenerating Fixed-Encoder Candidates:  90%|████████████████████████████████████████████████▌     | 270/300 [14:24<00:46,  1.55s/itGenerating Fixed-Encoder Candidates:  90%|████████████████████████████████████████████████▊     | 271/300 [14:25<00:41,  1.44s/itGenerating Fixed-Encoder Candidates:  91%|████████████████████████████████████████████████▉     | 272/300 [14:26<00:38,  1.39s/itGenerating Fixed-Encoder Candidates:  91%|█████████████████████████████████████████████████▏    | 273/300 [14:27<00:35,  1.32s/itGenerating Fixed-Encoder Candidates:  91%|█████████████████████████████████████████████████▎    | 274/300 [14:29<00:35,  1.36s/itGenerating Fixed-Encoder Candidates:  92%|█████████████████████████████████████████████████▌    | 275/300 [14:30<00:34,  1.37s/itGenerating Fixed-Encoder Candidates:  92%|█████████████████████████████████████████████████▋    | 276/300 [14:31<00:31,  1.33s/itGenerating Fixed-Encoder Candidates:  92%|█████████████████████████████████████████████████▊    | 277/300 [14:32<00:28,  1.23s/itGenerating Fixed-Encoder Candidates:  93%|██████████████████████████████████████████████████    | 278/300 [14:34<00:26,  1.22s/itGenerating Fixed-Encoder Candidates:  93%|██████████████████████████████████████████████████▏   | 279/300 [14:35<00:27,  1.33s/itGenerating Fixed-Encoder Candidates:  93%|██████████████████████████████████████████████████▍   | 280/300 [14:37<00:27,  1.39s/itGenerating Fixed-Encoder Candidates:  94%|██████████████████████████████████████████████████▌   | 281/300 [14:38<00:26,  1.39s/itGenerating Fixed-Encoder Candidates:  94%|██████████████████████████████████████████████████▊   | 282/300 [14:40<00:27,  1.51s/itGenerating Fixed-Encoder Candidates:  94%|██████████████████████████████████████████████████▉   | 283/300 [14:41<00:25,  1.48s/itGenerating Fixed-Encoder Candidates:  95%|███████████████████████████████████████████████████   | 284/300 [14:43<00:25,  1.62s/itGenerating Fixed-Encoder Candidates:  95%|███████████████████████████████████████████████████▎  | 285/300 [14:45<00:23,  1.58s/itGenerating Fixed-Encoder Candidates:  95%|███████████████████████████████████████████████████▍  | 286/300 [14:46<00:20,  1.45s/itGenerating Fixed-Encoder Candidates:  96%|███████████████████████████████████████████████████▋  | 287/300 [14:48<00:21,  1.65s/itGenerating Fixed-Encoder Candidates:  96%|███████████████████████████████████████████████████▊  | 288/300 [14:49<00:17,  1.49s/itGenerating Fixed-Encoder Candidates:  96%|████████████████████████████████████████████████████  | 289/300 [14:51<00:16,  1.52s/itGenerating Fixed-Encoder Candidates:  97%|████████████████████████████████████████████████████▏ | 290/300 [14:52<00:15,  1.53s/itGenerating Fixed-Encoder Candidates:  97%|████████████████████████████████████████████████████▍ | 291/300 [14:53<00:12,  1.42s/itGenerating Fixed-Encoder Candidates:  97%|████████████████████████████████████████████████████▌ | 292/300 [14:55<00:10,  1.33s/itGenerating Fixed-Encoder Candidates:  98%|████████████████████████████████████████████████████▋ | 293/300 [14:56<00:09,  1.32s/itGenerating Fixed-Encoder Candidates:  98%|████████████████████████████████████████████████████▉ | 294/300 [14:57<00:07,  1.33s/itGenerating Fixed-Encoder Candidates:  98%|█████████████████████████████████████████████████████ | 295/300 [14:58<00:06,  1.27s/itGenerating Fixed-Encoder Candidates:  99%|█████████████████████████████████████████████████████▎| 296/300 [15:00<00:05,  1.40s/itGenerating Fixed-Encoder Candidates:  99%|█████████████████████████████████████████████████████▍| 297/300 [15:02<00:04,  1.49s/itGenerating Fixed-Encoder Candidates:  99%|█████████████████████████████████████████████████████▋| 298/300 [15:03<00:02,  1.47s/itGenerating Fixed-Encoder Candidates: 100%|█████████████████████████████████████████████████████▊| 299/300 [15:05<00:01,  1.58s/itGenerating Fixed-Encoder Candidates: 100%|██████████████████████████████████████████████████████| 300/300 [15:07<00:00,  1.55s/itGenerating Fixed-Encoder Candidates: 100%|██████████████████████████████████████████████████████| 300/300 [15:07<00:00,  3.02s/it]
+
+============================================================
+FINAL PLAIN-LANGUAGE REPORT
+============================================================
+Natural decoder-only corruption was sparse (10.4%).
+Natural ASR Detector F1: 0.242 | ROC-AUC: 0.740
+
+============================================================
+CONTROLLED DECODER-SIDE CORRUPTION STRESS TEST
+============================================================
+Samples: 257
+Level 0: 257
+Level 1: 257
+Level 2: 257
+Target corruption rate: 66.7%
+Voice-NLU posterior invariant: PASS
+Detector B:
+Level 0 vs Level 1
+    Precision: 0.623
+    Recall: 0.988
+    F1: 0.764
+    ROC-AUC: 0.891
+    PR-AUC: 0.898
+Level 0 vs Level 2
+    Precision: 0.621
+    Recall: 0.981
+    F1: 0.760
+    ROC-AUC: 0.888
+    PR-AUC: 0.896
+Level 0 vs Level 1+2
+    Precision: 0.767
+    Recall: 0.984
+    F1: 0.862
+    ROC-AUC: 0.889
+    PR-AUC: 0.942
+
+This is a controlled decoder-side corruption stress test, not evidence of naturally occurring Whisper decoder errors.
