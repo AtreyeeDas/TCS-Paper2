@@ -26,7 +26,7 @@ from sentence_transformers import SentenceTransformer
 import torch.nn as nn
 import torch.nn.functional as F
 
-# Import authoritative feature extractor
+# Authoritative feature extractor from training
 from feature_extractor import extract_baseline_features
 
 warnings.filterwarnings("ignore")
@@ -35,8 +35,15 @@ warnings.filterwarnings("ignore")
 # 0. CONFIGURATION & PATHS
 # ==========================================
 ROOT_DIR = Path("/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment")
-DATASET_CSV = ROOT_DIR / "dataset" / "robus_nlu_6000_paraphrase_scenario.csv"
-AUDIO_DIR = ROOT_DIR / "audio"
+EVAL_DATASET_CSV = ROOT_DIR / "dataset" / "whisper_domain_multitarget_6000.csv"
+GROUND_TRUTH_SEMANTIC_CSV = ROOT_DIR / "dataset" / "robus_nlu_6000_paraphrase_scenario.csv"
+
+# Check possible audio directories
+AUDIO_DIRS = [
+    ROOT_DIR / "audio",
+    ROOT_DIR / "audios",
+    ROOT_DIR / "dataset" / "audio"
+]
 
 WHISPER_MODEL_PATH = "/home/spark2/Models/base.en.pt"
 VOICE_MODELS_DIR = ROOT_DIR / "audio_nlu_models"
@@ -123,14 +130,30 @@ def normalize_text(text):
     text = re.sub(r'\s+', ' ', text)
     return text.strip()
 
-def build_dataset_vocabulary(df):
+def build_dataset_vocabulary(dfs):
     vocab = set()
-    text_cols = [c for c in df.columns if 'transcript' in c or 'target' in c or 'term' in c]
-    for col in text_cols:
-        for val in df[col].dropna():
-            norm_val = normalize_text(str(val))
-            vocab.update(norm_val.split())
+    for df in dfs:
+        if df is None: continue
+        text_cols = [c for c in df.columns if any(k in c.lower() for k in ['transcript', 'target', 'term', 'word', 'text', 'prompt'])]
+        for col in text_cols:
+            for val in df[col].dropna():
+                norm_val = normalize_text(str(val))
+                vocab.update(norm_val.split())
     return vocab
+
+def find_audio_file(sample_id):
+    for adir in AUDIO_DIRS:
+        if not adir.exists(): continue
+        candidates = [
+            adir / f"{sample_id}.wav",
+            adir / f"{sample_id}",
+            adir / f"sample_{sample_id}.wav",
+            adir / f"{sample_id}.flac"
+        ]
+        for p in candidates:
+            if p.exists():
+                return p
+    return None
 
 def check_target_corruption(candidate_text, target_term):
     cand_norm = normalize_text(candidate_text)
@@ -156,11 +179,14 @@ def run_diagnostic():
     print("="*60 + "\nPART 1: ARTIFACT AUDIT & LOADING\n" + "="*60)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     
-    # 1. Dataset & Distractor Verification
-    df = pd.read_csv(DATASET_CSV)
-    df_unseen = df[df['split'] == 'unseen'].copy()
+    # 1. Load Datasets
+    assert EVAL_DATASET_CSV.exists(), f"Missing evaluation dataset: {EVAL_DATASET_CSV}"
+    df_eval_raw = pd.read_csv(EVAL_DATASET_CSV)
     
-    dataset_vocab = build_dataset_vocabulary(df)
+    df_gt_raw = pd.read_csv(GROUND_TRUTH_SEMANTIC_CSV) if GROUND_TRUTH_SEMANTIC_CSV.exists() else None
+    
+    # 2. Build Dataset Vocabulary & Distractor Filter
+    dataset_vocab = build_dataset_vocabulary([df_eval_raw, df_gt_raw])
     valid_distractors = {}
     total_candidates = 0
     excluded_count = 0
@@ -175,10 +201,29 @@ def run_diagnostic():
             else:
                 valid_distractors[dom].append(term)
     
-    # 2. Load Whisper
+    # 3. Filter Samples for Diagnostic (Unseen Split)
+    if 'split' in df_eval_raw.columns:
+        df_unseen = df_eval_raw[df_eval_raw['split'] == 'unseen'].copy()
+    else:
+        df_unseen = df_eval_raw.copy()
+        
+    if len(df_unseen) > 300:
+        df_unseen = df_unseen.sample(300, random_state=42)
+        
+    # Verify Audio Availability
+    valid_sample_rows = []
+    for _, row in df_unseen.iterrows():
+        sid = str(row['sample_id'])
+        if find_audio_file(sid) is not None:
+            valid_sample_rows.append(row)
+            
+    df_samples = pd.DataFrame(valid_sample_rows)
+    print(f"[+] Found {len(df_samples)} valid audio samples for diagnostic from {len(df_unseen)} candidates.")
+    assert len(df_samples) > 0, "FATAL: 0 audio files found! Verify AUDIO_DIRS."
+
+    # 4. Load Models & Artifacts
     whisper_model = whisper.load_model(WHISPER_MODEL_PATH, device=device)
     
-    # 3. Load Voice-NLU Artifacts
     v_enc = joblib.load(VOICE_MODELS_DIR / "label_encoders.joblib")
     v_scaler = joblib.load(VOICE_MODELS_DIR / "whisper_scaler.joblib")
     v_proj = VoiceHierarchicalProjection(512, 128).to(device)
@@ -186,7 +231,6 @@ def run_diagnostic():
     v_proj.eval()
     v_mlps = {h: joblib.load(VOICE_MODELS_DIR / f"{h}_mlp.joblib") for h in HEADS}
     
-    # 4. Load Text-NLU Artifacts
     t_enc_model = SentenceTransformer(TEXT_ENCODER_PATH, device=device)
     t_scaler = joblib.load(TEXT_MODELS_DIR / "text_scaler.joblib")
     t_proj = TextHierarchicalProjection(384, 128).to(device)
@@ -195,7 +239,6 @@ def run_diagnostic():
     t_enc = joblib.load(TEXT_MODELS_DIR / "text_label_encoders.joblib")
     t_mlps = {h: joblib.load(TEXT_MODELS_DIR / f"text_{h}_mlp.joblib") for h in HEADS}
     
-    # 5. Load Detector B
     detector_b = joblib.load(DETECTOR_B_PATH)
     
     with open(THRESHOLDS_PATH, "r") as f:
@@ -204,7 +247,7 @@ def run_diagnostic():
     with open(FEATURES_PATH, "r") as f:
         expected_features = json.load(f)
 
-    # 6. Pre-flight Assertions
+    # 5. Pre-flight Assertions
     print(f"Voice-NLU expected input dimension: 128")
     print(f"Text-NLU expected input dimension: 128")
     print(f"Detector B expected feature count: {len(expected_features)}")
@@ -212,8 +255,7 @@ def run_diagnostic():
     print(f"Number of dataset terms used for exclusion: {len(dataset_vocab)}")
     print(f"Number of candidate distractors remaining: {total_candidates - excluded_count} / {total_candidates}")
     print(f"Encoder fixed-decoding implementation: PASS (using enc_out passed to whisper.decode)")
-    
-    # Prepare feature audit output
+
     audit_data = {
         "voice_nlu_expected_dim": 128,
         "text_nlu_expected_dim": 128,
@@ -233,18 +275,27 @@ def run_diagnostic():
     processed_audio = set()
     sanity_count = 0
     
-    if len(df_unseen) > 300: df_unseen = df_unseen.sample(300, random_state=42)
-    
-    for idx, row in tqdm(df_unseen.iterrows(), total=len(df_unseen), desc="Generating Fixed-Encoder Candidates"):
+    for idx, row in tqdm(df_samples.iterrows(), total=len(df_samples), desc="Generating Fixed-Encoder Candidates"):
         sample_id = str(row['sample_id'])
-        audio_path = AUDIO_DIR / f"{sample_id}.wav"
-        if not audio_path.exists() or sample_id in processed_audio: continue
+        audio_path = find_audio_file(sample_id)
+        if audio_path is None or sample_id in processed_audio: continue
         processed_audio.add(sample_id)
         
-        target_term = str(row.get('target_terms', row.get('source_term', ''))).lower()
+        # Robust column retrieval for target terms
+        target_term = ""
+        for col_name in ['target_terms', 'target_words', 'target_term', 'source_term']:
+            if col_name in row and pd.notna(row[col_name]):
+                target_term = str(row[col_name]).lower()
+                break
         if not target_term or target_term == 'nan': continue
         
-        domain = str(row.get('domain_label', row.get('domain', 'general'))).lower()
+        domain = ""
+        for col_name in ['domain_label', 'domain']:
+            if col_name in row and pd.notna(row[col_name]):
+                domain = str(row[col_name]).lower()
+                break
+        if not domain: domain = 'general'
+        
         domain_key = domain if domain in valid_distractors else 'general'
         available_distractors = valid_distractors[domain_key]
         
@@ -252,7 +303,7 @@ def run_diagnostic():
         audio_32 = audio_arr.astype(np.float32)
         mel = whisper.log_mel_spectrogram(whisper.pad_or_trim(audio_32)).to(device)
         
-        # 1. FIXED ENCODER PASS (RUN ONCE)
+        # 1. FIXED ENCODER PASS (RUN ONCE PER AUDIO)
         with torch.no_grad():
             enc_out = whisper_model.encoder(mel.unsqueeze(0))
             emb_512 = enc_out.mean(dim=1).cpu().numpy().astype(np.float32)
@@ -270,7 +321,7 @@ def run_diagnostic():
             v_preds[h] = probs
             voice_row[f"voice_{h}"] = v_enc[f"{h}_label"].inverse_transform([np.argmax(probs)])[0]
             
-        # 3. DECODER VARIATION (Fixed Encoder)
+        # 3. DECODER VARIATION (Using precomputed enc_out)
         base_v_posteriors = {h: v_preds[h].copy() for h in HEADS}
         
         for temp in DECODER_TEMPS:
@@ -283,9 +334,9 @@ def run_diagnostic():
                     distractors_used = ", ".join(selected)
                     options_dict["initial_prompt"] = f"English speech transcription. The speaker may use specialized domain terminology. The recording may contain terminology that sounds similar to other specialized terms. Possible terminology includes: {distractors_used}. Pay close attention to pronunciation and distinguish similar-sounding specialized terms carefully."
                 elif use_distractor:
-                    continue # Skip if no distractors available
+                    continue # Skip distractor condition if none available
                 
-                # FIXED ENCODER DECODE: Pass enc_out instead of mel
+                # FIXED ENCODER DECODE
                 with torch.no_grad():
                     dec_res = whisper.decode(whisper_model, enc_out, whisper.DecodingOptions(**options_dict))
                     candidate_text = dec_res.text.strip()
@@ -298,7 +349,7 @@ def run_diagnostic():
                     "distractors_used": distractors_used
                 })
                 
-                # 4. TARGET CORRUPTION CHECK (Diagnostic Truth ONLY)
+                # 4. TARGET CORRUPTION CHECK (Diagnostic Evaluation ONLY)
                 t_count, t_pres, t_rate, exact_pres, target_corrupted = check_target_corruption(candidate_text, target_term)
                 
                 # 5. TEXT-NLU (Transform 384 -> 128)
@@ -339,7 +390,7 @@ def run_diagnostic():
                     "detector_prediction": det_pred
                 }
                 
-                # Verify Invariance Check
+                # Invariance Check
                 posterior_invariant = all(np.allclose(base_v_posteriors[h], v_preds[h]) for h in HEADS)
                 cand_data["voice_posterior_invariant"] = "PASS" if posterior_invariant else "FAIL"
                 assert posterior_invariant, "Voice-NLU posterior changed! Fixed encoder assumption failed."
@@ -358,6 +409,8 @@ def run_diagnostic():
                     print(f"Voice-NLU posterior invariant: {cand_data['voice_posterior_invariant']}")
                     sanity_count += 1
 
+    assert len(all_candidates) > 0, "FATAL: No decoder candidates were generated. Check dataset filtering and target terms."
+
     df_cands = pd.DataFrame(all_candidates)
     df_cands.to_csv(EXP_DIR / "results" / "all_decoder_candidates.csv", index=False)
     
@@ -365,7 +418,7 @@ def run_diagnostic():
     
     audit_data["samples_processed"] = len(processed_audio)
     audit_data["decoder_candidates_evaluated"] = len(df_cands)
-    audit_data["actual_runtime_feature_count"] = feat_vector.shape[1]
+    audit_data["actual_runtime_feature_count"] = len(expected_features)
     
     with open(EXP_DIR / "logs" / "runtime_feature_audit.json", "w") as f:
         json.dump(audit_data, f, indent=4)
