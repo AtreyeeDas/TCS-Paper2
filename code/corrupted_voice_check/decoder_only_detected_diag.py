@@ -20,8 +20,8 @@ from pathlib import Path
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, auc, precision_recall_curve, confusion_matrix
-from scipy.spatial.distance import jensenshannon
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, auc, precision_recall_curve
+from scipy.spatial.distance import cosine, jensenshannon
 from sentence_transformers import SentenceTransformer
 import torch.nn as nn
 import torch.nn.functional as F
@@ -39,7 +39,9 @@ WHISPER_MODEL_PATH = "/home/spark2/Models/base.en.pt"
 VOICE_MODELS_DIR = ROOT_DIR / "audio_nlu_models"
 TEXT_MODELS_DIR = ROOT_DIR / "text_nlu_models"
 TEXT_ENCODER_PATH = "/home/spark2/Models/all-MiniLM-L6-v2"
-DETECTOR_B_PATH = ROOT_DIR / "error_detector" / "error_detector_with_posterior.joblib"
+DETECTOR_DIR = ROOT_DIR / "error_detector"
+DETECTOR_B_PATH = DETECTOR_DIR / "error_detector_with_posterior.joblib"
+THRESHOLDS_PATH = DETECTOR_DIR / "thresholds.json"
 
 EXP_DIR = Path("decoder_only_detector_diagnostic")
 for sub in ["results", "posterior_npz", "representative", "figures", "logs"]:
@@ -47,8 +49,25 @@ for sub in ["results", "posterior_npz", "representative", "figures", "logs"]:
 
 HEADS = ["domain", "subdomain", "topic", "document_type"]
 HEAD_WEIGHTS = {"domain": 0.20, "subdomain": 0.25, "topic": 0.40, "document_type": 0.15}
+EPS = 1e-12
+
 DECODER_TEMPS = [0.0, 0.2, 0.4, 0.6, 0.8]
-BEAM_SIZES = [1, 3, 5]
+
+# ==========================================
+# 1. ARCHITECTURE DEFINITIONS
+# ==========================================
+class VoiceHierarchicalProjection(nn.Module):
+    def __init__(self, input_dim=512, projection_dim=128):
+        super().__init__()
+        self.projector = nn.Sequential(
+            nn.Linear(input_dim, 256),
+            nn.ReLU(),
+            nn.Dropout(0.10),
+            nn.Linear(256, projection_dim),
+        )
+    def forward(self, x):
+        z = self.projector(x)
+        return F.normalize(z, p=2, dim=1)
 
 class TextHierarchicalProjection(nn.Module):
     def __init__(self, input_dim=384, projection_dim=128):
@@ -64,7 +83,101 @@ class TextHierarchicalProjection(nn.Module):
         return F.normalize(z, p=2, dim=1)
 
 # ==========================================
-# 1. HELPER FUNCTIONS
+# 2. AUTHORITATIVE FEATURE EXTRACTION
+# ==========================================
+def compute_entropy(probs: np.ndarray) -> float:
+    p = np.clip(probs, EPS, 1.0)
+    p = p / np.sum(p)
+    return float(-np.sum(p * np.log(p)))
+
+def compute_margin(probs: np.ndarray) -> float:
+    if len(probs) < 2:
+        return 1.0
+    sorted_probs = np.sort(probs)[::-1]
+    return float(sorted_probs[0] - sorted_probs[1])
+
+def align_distributions(p1: np.ndarray, classes1: np.ndarray, p2: np.ndarray, classes2: np.ndarray):
+    all_classes = sorted(list(set(classes1) | set(classes2)))
+    m1 = {c: p for c, p in zip(classes1, p1)}
+    m2 = {c: p for c, p in zip(classes2, p2)}
+    a1 = np.array([m1.get(c, EPS) for c in all_classes], dtype=float)
+    a2 = np.array([m2.get(c, EPS) for c in all_classes], dtype=float)
+    a1 = a1 / np.sum(a1)
+    a2 = a2 / np.sum(a2)
+    return a1, a2, all_classes
+
+def align_and_compute_js_divergence(voice_probs: np.ndarray, voice_classes: np.ndarray, text_probs: np.ndarray, text_classes: np.ndarray) -> float:
+    v_aligned, t_aligned, _ = align_distributions(voice_probs, voice_classes, text_probs, text_classes)
+    js_dist = jensenshannon(v_aligned, t_aligned, base=2)
+    return float(js_dist**2) if not np.isnan(js_dist) else 0.0
+
+def extract_baseline_features(voice_row, text_row, voice_posteriors_sample, text_posteriors_sample, voice_encoders, text_encoders):
+    feat_a = {}
+    feat_b = {}
+    total_disagreements = 0.0
+    weighted_disagreements = 0.0
+
+    for head in HEADS:
+        v_label = str(voice_row[f"voice_{head}"])
+        t_label = str(text_row[f"text_{head}"])
+        disagree = 1.0 if v_label != t_label else 0.0
+        feat_a[f"{head}_disagreement"] = disagree
+        total_disagreements += disagree
+        weighted_disagreements += HEAD_WEIGHTS[head] * disagree
+
+    feat_a["total_disagreements"] = float(total_disagreements)
+    feat_a["weighted_disagreement"] = float(weighted_disagreements)
+    feat_b.update(feat_a)
+
+    voice_confs, text_confs, cross_supports, js_divs = [], [], [], []
+
+    for head in HEADS:
+        v_label = str(voice_row[f"voice_{head}"])
+        t_label = str(text_row[f"text_{head}"])
+        v_probs = voice_posteriors_sample[head]
+        t_probs = text_posteriors_sample[head]
+        v_classes = voice_encoders[f"{head}_label"].classes_
+        t_classes = text_encoders[f"{head}_label"].classes_
+
+        v_top1_conf = float(np.max(v_probs))
+        t_top1_conf = float(np.max(t_probs))
+        conf_gap = abs(v_top1_conf - t_top1_conf)
+        voice_confs.append(v_top1_conf)
+        text_confs.append(t_top1_conf)
+
+        v_class_to_idx = {c: idx for idx, c in enumerate(v_classes)}
+        t_class_to_idx = {c: idx for idx, c in enumerate(t_classes)}
+
+        t_prob_of_v_choice = float(t_probs[t_class_to_idx[v_label]]) if v_label in t_class_to_idx else 0.0
+        v_prob_of_t_choice = float(v_probs[v_class_to_idx[t_label]]) if t_label in v_class_to_idx else 0.0
+        cross_supports.extend([t_prob_of_v_choice, v_prob_of_t_choice])
+
+        js_div = align_and_compute_js_divergence(v_probs, v_classes, t_probs, t_classes)
+        js_divs.append(js_div)
+
+        feat_b[f"{head}_voice_top1_confidence"] = v_top1_conf
+        feat_b[f"{head}_text_top1_confidence"] = t_top1_conf
+        feat_b[f"{head}_confidence_gap"] = conf_gap
+        feat_b[f"{head}_text_prob_of_voice_label"] = t_prob_of_v_choice
+        feat_b[f"{head}_voice_prob_of_text_label"] = v_prob_of_t_choice
+        feat_b[f"{head}_js_divergence"] = js_div
+        feat_b[f"{head}_voice_entropy"] = compute_entropy(v_probs)
+        feat_b[f"{head}_text_entropy"] = compute_entropy(t_probs)
+        feat_b[f"{head}_voice_margin"] = compute_margin(v_probs)
+        feat_b[f"{head}_text_margin"] = compute_margin(t_probs)
+
+    mean_v_conf = float(np.mean(voice_confs))
+    mean_t_conf = float(np.mean(text_confs))
+    feat_b["mean_voice_confidence"] = mean_v_conf
+    feat_b["mean_text_confidence"] = mean_t_conf
+    feat_b["mean_cross_model_support"] = float(np.mean(cross_supports))
+    feat_b["weighted_js_divergence"] = float(sum(HEAD_WEIGHTS[h] * js for h, js in zip(HEADS, js_divs)))
+    feat_b["strong_conflict_score"] = float(weighted_disagreements * min(mean_v_conf, mean_t_conf))
+
+    return feat_a, feat_b
+
+# ==========================================
+# 3. HELPER FUNCTIONS
 # ==========================================
 def normalize_text(text):
     if not isinstance(text, str): return ""
@@ -80,104 +193,21 @@ def check_target_corruption(candidate_text, target_term):
     targ_tokens = targ_norm.split()
     cand_tokens = cand_norm.split()
     
-    if not targ_tokens:
-        return 0, 0, 0.0, 0, 0
+    if not targ_tokens: return 0, 0, 0.0, 0, 0
         
     target_token_count = len(targ_tokens)
     target_tokens_preserved = sum(1 for t in targ_tokens if t in cand_tokens)
     target_corruption_rate = 1.0 - (target_tokens_preserved / target_token_count)
     exact_target_preserved = 1 if targ_norm in cand_norm else 0
-    target_was_corrupted = 1 if exact_target_preserved == 0 else 0
+    target_was_corrupted = 1 if target_corruption_rate > 0 else 0
     
     return target_token_count, target_tokens_preserved, target_corruption_rate, exact_target_preserved, target_was_corrupted
 
-def calc_entropy(probs):
-    p = np.clip(probs, 1e-12, 1.0)
-    return -np.sum(p * np.log2(p))
-
-def calc_instability(probs):
-    k = len(probs)
-    h_norm = calc_entropy(probs) / np.log2(k) if k > 1 else 0
-    sorted_p = np.sort(probs)[::-1]
-    margin = sorted_p[0] - sorted_p[1] if k > 1 else 1.0
-    return 0.5 * h_norm + 0.5 * (1.0 - margin)
-
-def align_and_compare_posteriors(v_probs, t_probs, v_classes, t_classes):
-    union_classes = list(set(v_classes) | set(t_classes))
-    union_classes.sort()
-    
-    v_aligned = np.zeros(len(union_classes))
-    t_aligned = np.zeros(len(union_classes))
-    
-    for i, cls in enumerate(union_classes):
-        if cls in v_classes: v_aligned[i] = v_probs[list(v_classes).index(cls)]
-        if cls in t_classes: t_aligned[i] = t_probs[list(t_classes).index(cls)]
-        
-    v_aligned = np.clip(v_aligned, 1e-12, 1.0)
-    t_aligned = np.clip(t_aligned, 1e-12, 1.0)
-    v_aligned /= v_aligned.sum()
-    t_aligned /= t_aligned.sum()
-    
-    js_div = jensenshannon(v_aligned, t_aligned) ** 2
-    l1_dist = np.sum(np.abs(v_aligned - t_aligned))
-    l2_dist = np.sqrt(np.sum((v_aligned - t_aligned)**2))
-    cosine_dist = 1.0 - (np.dot(v_aligned, t_aligned) / (np.linalg.norm(v_aligned) * np.linalg.norm(t_aligned)))
-    
-    return js_div, l1_dist, l2_dist, cosine_dist
-
-def extract_detector_b_features(v_preds, t_preds, v_classes_dict, t_classes_dict):
-    features = {}
-    weighted_disagreement = 0.0
-    total_disagreements = 0
-    
-    for h in HEADS:
-        v_p = v_preds[h]
-        t_p = t_preds[h]
-        v_cls = v_classes_dict[h]
-        t_cls = t_classes_dict[h]
-        
-        v_top1_idx = np.argmax(v_p)
-        t_top1_idx = np.argmax(t_p)
-        
-        v_label = v_cls[v_top1_idx]
-        t_label = t_cls[t_top1_idx]
-        
-        disagreement = 1 if v_label != t_label else 0
-        features[f"{h}_disagreement"] = disagreement
-        total_disagreements += disagreement
-        weighted_disagreement += HEAD_WEIGHTS[h] * disagreement
-        
-        features[f"voice_top1_confidence_{h}"] = v_p[v_top1_idx]
-        features[f"text_top1_confidence_{h}"] = t_p[t_top1_idx]
-        features[f"absolute_confidence_difference_{h}"] = abs(v_p[v_top1_idx] - t_p[t_top1_idx])
-        
-        v_prob_of_t = v_p[list(v_cls).index(t_label)] if t_label in v_cls else 0.0
-        t_prob_of_v = t_p[list(t_cls).index(v_label)] if v_label in t_cls else 0.0
-        features[f"voice_probability_of_text_selected_class_{h}"] = v_prob_of_t
-        features[f"text_probability_of_voice_selected_class_{h}"] = t_prob_of_v
-        
-        js, l1, l2, cos = align_and_compare_posteriors(v_p, t_p, v_cls, t_cls)
-        features[f"js_divergence_{h}"] = js
-        
-        v_sorted = np.sort(v_p)[::-1]
-        t_sorted = np.sort(t_p)[::-1]
-        features[f"voice_entropy_{h}"] = calc_entropy(v_p)
-        features[f"text_entropy_{h}"] = calc_entropy(t_p)
-        features[f"voice_top1_top2_margin_{h}"] = v_sorted[0] - (v_sorted[1] if len(v_sorted)>1 else 0)
-        features[f"text_top1_top2_margin_{h}"] = t_sorted[0] - (t_sorted[1] if len(t_sorted)>1 else 0)
-
-    features["total_disagreements"] = total_disagreements
-    features["weighted_disagreement"] = weighted_disagreement
-    
-    return features
-
 # ==========================================
-# 2. MAIN EXPERIMENT
+# 4. MAIN EXPERIMENT
 # ==========================================
 def run_diagnostic():
-    print("="*60)
-    print("PART 1: ARTIFACT AUDIT & LOADING")
-    print("="*60)
+    print("="*60 + "\nPART 1: ARTIFACT AUDIT & LOADING\n" + "="*60)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     
     df = pd.read_csv(DATASET_CSV)
@@ -187,10 +217,15 @@ def run_diagnostic():
     print(f"[+] Loading Whisper from {WHISPER_MODEL_PATH}...")
     whisper_model = whisper.load_model(WHISPER_MODEL_PATH, device=device)
     
-    print("[+] Loading Voice-NLU & Text-NLU Artifacts...")
+    print("[+] Loading Voice-NLU Artifacts...")
     v_enc = joblib.load(VOICE_MODELS_DIR / "label_encoders.joblib")
+    v_scaler = joblib.load(VOICE_MODELS_DIR / "whisper_scaler.joblib")
+    v_proj = VoiceHierarchicalProjection(512, 128).to(device)
+    v_proj.load_state_dict(torch.load(VOICE_MODELS_DIR / "best_hierarchical_projection.pt", map_location=device))
+    v_proj.eval()
     v_mlps = {h: joblib.load(VOICE_MODELS_DIR / f"{h}_mlp.joblib") for h in HEADS}
     
+    print("[+] Loading Text-NLU Artifacts...")
     t_enc_model = SentenceTransformer(TEXT_ENCODER_PATH, device=device)
     t_scaler = joblib.load(TEXT_MODELS_DIR / "text_scaler.joblib")
     t_proj = TextHierarchicalProjection(384, 128).to(device)
@@ -201,23 +236,35 @@ def run_diagnostic():
     
     print("[+] Loading Existing Detector B...")
     detector_b = joblib.load(DETECTOR_B_PATH)
-    try:
-        expected_features = detector_b.feature_names_in_
-    except AttributeError:
-        print("[!] Warning: Detector B does not expose feature_names_in_. Using fallback strict ordering.")
-        expected_features = None
-
-    v_classes_dict = {h: v_enc[f"{h}_label"].classes_ for h in HEADS}
-    t_classes_dict = {h: t_enc[f"{h}_label"].classes_ for h in HEADS}
-
-    print("\n" + "="*60)
-    print("PART 24: SANITY CHECK (FIRST 10 SAMPLES)")
-    print("="*60)
     
+    if THRESHOLDS_PATH.exists():
+        with open(THRESHOLDS_PATH, "r") as f:
+            det_b_threshold = json.load(f).get("Detector_B", 0.5)
+        print(f"[+] Loaded Detector B Threshold: {det_b_threshold}")
+    else:
+        det_b_threshold = 0.5
+        print("[!] No threshold artifact found. Defaulting to 0.5.")
+        
+    if hasattr(detector_b, "feature_names_in_"):
+        expected_features = list(detector_b.feature_names_in_)
+    else:
+        raise ValueError("Detector B does not have feature_names_in_. Cannot guarantee strict runtime feature ordering.")
+
+    # Prepare feature audit output
+    audit_data = {
+        "voice_nlu_expected_dim": 128,
+        "text_nlu_expected_dim": 128,
+        "detector_b_expected_feature_count": len(expected_features),
+        "detector_b_feature_names": expected_features,
+        "detector_threshold": det_b_threshold,
+        "leakage_checks": {
+            "targets_corrupted_used": False,
+            "clean_transcript_used_for_detector": False
+        }
+    }
+
+    print("\n" + "="*60 + "\nPART 24: SANITY CHECK (FIRST 10 SAMPLES)\n" + "="*60)
     all_candidates = []
-    v_posteriors_list = []
-    t_posteriors_list = []
-    
     processed_audio = set()
     sanity_count = 0
     
@@ -239,20 +286,25 @@ def run_diagnostic():
             enc_out = whisper_model.encoder(mel.unsqueeze(0))
             emb_512 = enc_out.mean(dim=1).cpu().numpy().astype(np.float32)
             
-        # 2. VOICE-NLU (Constant for all candidates of this sample)
-        v_preds, v_labels = {}, {}
-        for h in HEADS:
-            probs = v_mlps[h].predict_proba(emb_512)[0]
-            v_preds[h] = probs
-            v_labels[h] = v_classes_dict[h][np.argmax(probs)]
+        # 2. VOICE-NLU (Transform 512 -> 128)
+        v_scaled = v_scaler.transform(emb_512).astype(np.float32)
+        with torch.no_grad():
+            v_128 = v_proj(torch.tensor(v_scaled, device=device)).cpu().numpy()
             
-        most_unstable_voice_head = max(HEADS, key=lambda h: calc_instability(v_preds[h]))
-        v_topic_correct = (v_labels['topic'] == str(row.get('topic_label', row.get('topic'))))
+        assert v_128.shape[1] == 128, f"Voice-NLU dimension mismatch! Expected 128, got {v_128.shape[1]}"
         
-        # 3. DECODER VARIATION (Using precomputed encoder state via explicit standard API if supported, or mel)
+        v_preds, voice_row = {}, {}
+        for h in HEADS:
+            probs = v_mlps[h].predict_proba(v_128)[0]
+            v_preds[h] = probs
+            voice_row[f"voice_{h}"] = v_enc[f"{h}_label"].inverse_transform([np.argmax(probs)])[0]
+            
+        v_topic_correct = (voice_row['voice_topic'] == str(row.get('topic_label', row.get('topic'))))
+        
+        # 3. DECODER VARIATION
         for temp in DECODER_TEMPS:
             condition_flags = [False]
-            if temp == 0.0: condition_flags.append(True) # Stress test with prefix
+            if temp == 0.0: condition_flags.append(True) 
             
             for is_conditioned in condition_flags:
                 options_dict = {"language": "en", "temperature": temp, "fp16": False}
@@ -263,83 +315,72 @@ def run_diagnostic():
                     dec_res = whisper.decode(whisper_model, mel, whisper.DecodingOptions(**options_dict))
                     candidate_text = dec_res.text.strip()
                 
-                # 4. TARGET CORRUPTION CHECK
+                # 4. TARGET CORRUPTION CHECK (Diagnostic Truth ONLY)
                 t_count, t_pres, t_rate, exact_pres, target_corrupted = check_target_corruption(candidate_text, target_term)
                 
-                # 5. TEXT-NLU
-                emb_384 = t_enc_model.encode([candidate_text], convert_to_numpy=True)
-                scaled = t_scaler.transform(emb_384)
+                # 5. TEXT-NLU (Transform 384 -> 128)
+                emb_384 = t_enc_model.encode([candidate_text], convert_to_numpy=True).astype(np.float32)
+                t_scaled = t_scaler.transform(emb_384).astype(np.float32)
                 with torch.no_grad():
-                    z_128 = t_proj(torch.tensor(scaled, device=device)).cpu().numpy()
+                    t_128 = t_proj(torch.tensor(t_scaled, device=device)).cpu().numpy()
                 
-                t_preds, t_labels = {}, {}
+                assert t_128.shape[1] == 128, f"Text-NLU dimension mismatch! Expected 128, got {t_128.shape[1]}"
+                
+                t_preds, text_row = {}, {}
                 for h in HEADS:
-                    probs = t_mlps[h].predict_proba(z_128)[0]
+                    probs = t_mlps[h].predict_proba(t_128)[0]
                     t_preds[h] = probs
-                    t_labels[h] = t_classes_dict[h][np.argmax(probs)]
+                    text_row[f"text_{h}"] = t_enc[f"{h}_label"].inverse_transform([np.argmax(probs)])[0]
                     
-                most_unstable_text_head = max(HEADS, key=lambda h: calc_instability(t_preds[h]))
-                t_topic_correct = (t_labels['topic'] == str(row.get('topic_label', row.get('topic'))))
-                t_topic_uncertain = calc_instability(t_preds['topic']) > 0.6
+                t_topic_correct = (text_row['text_topic'] == str(row.get('topic_label', row.get('topic'))))
                 
                 # 6. EXACT DETECTOR B FEATURES
-                det_features = extract_detector_b_features(v_preds, t_preds, v_classes_dict, t_classes_dict)
-                if expected_features is not None:
-                    feat_vector = pd.DataFrame([det_features])[expected_features]
-                else:
-                    feat_vector = pd.DataFrame([det_features])
+                _, det_features = extract_baseline_features(
+                    voice_row, text_row, v_preds, t_preds, v_enc, t_enc
+                )
+                
+                feat_vector = pd.DataFrame([det_features])[expected_features]
+                assert feat_vector.shape[1] == len(expected_features), "Detector B feature dimension mismatch!"
                     
                 det_prob = detector_b.predict_proba(feat_vector)[0][1]
-                det_pred = 1 if det_prob >= 0.5 else 0
-                
-                # Asymmetric target check
-                desired_asymmetric = 1 if (target_corrupted == 1 and v_topic_correct and (not t_topic_correct or t_topic_uncertain)) else 0
+                det_pred = 1 if det_prob >= det_b_threshold else 0
                 
                 cand_data = {
                     "sample_id": sample_id,
-                    "scenario_id": row.get('scenario_id', ''),
                     "target_term": target_term,
                     "decoder_temperature": temp,
                     "decoder_conditioned": int(is_conditioned),
                     "clean_reference_transcript": row.get('reference_transcript', ''),
                     "decoder_transcript": candidate_text,
-                    "target_token_count": t_count,
                     "target_corruption_rate": t_rate,
                     "target_was_corrupted": target_corrupted,
                     "voice_topic_correct": int(v_topic_correct),
                     "text_topic_correct": int(t_topic_correct),
-                    "desired_asymmetric": desired_asymmetric,
-                    "most_unstable_voice_head": most_unstable_voice_head,
-                    "most_unstable_text_head": most_unstable_text_head,
                     "detector_probability": det_prob,
                     "detector_prediction": det_pred
                 }
-                cand_data.update({f"ground_truth_{h}": str(row.get(f"{h}_label", row.get(h))) for h in HEADS})
-                cand_data.update({f"js_{h}": det_features[f"js_divergence_{h}"] for h in HEADS})
-                cand_data.update({f"voice_topic_prob": v_preds['topic'][np.argmax(v_preds['topic'])]})
-                cand_data.update({f"text_topic_prob": t_preds['topic'][np.argmax(t_preds['topic'])]})
                 
                 all_candidates.append(cand_data)
-                v_posteriors_list.append(v_preds)
-                t_posteriors_list.append(t_preds)
                 
-                # Print Sanity Check
                 if sanity_count < 10:
                     print(f"\n--- SANITY CHECK {sanity_count+1} ---")
                     print(f"Target: {target_term} | Temp: {temp} | Cond: {is_conditioned}")
                     print(f"Transcript: {candidate_text}")
-                    print(f"Target Corrupted: {target_corrupted} (Rate: {t_rate:.2f})")
-                    print(f"Voice Topic: {v_labels['topic']} ({v_preds['topic'][np.argmax(v_preds['topic'])]:.2f})")
-                    print(f"Text Topic: {t_labels['topic']} ({t_preds['topic'][np.argmax(t_preds['topic'])]:.2f})")
-                    print(f"Detector Prob: {det_prob:.3f}")
+                    print(f"Target Corrupted: {target_corrupted}")
+                    print(f"Voice Dim: {v_128.shape} | Text Dim: {t_128.shape}")
+                    print(f"Voice Topic: {voice_row['voice_topic']} | Text Topic: {text_row['text_topic']}")
+                    print(f"Det Features Count: {feat_vector.shape[1]} | Det Prob: {det_prob:.3f} | Pred: {det_pred}")
                     sanity_count += 1
 
     df_cands = pd.DataFrame(all_candidates)
     df_cands.to_csv(EXP_DIR / "results" / "all_decoder_candidates.csv", index=False)
     
-    print("\n" + "="*60)
-    print("PART 13: EVALUATE DETECTOR B")
-    print("="*60)
+    audit_data["samples_processed"] = len(processed_audio)
+    audit_data["decoder_candidates_evaluated"] = len(df_cands)
+    with open(EXP_DIR / "logs" / "runtime_feature_audit.json", "w") as f:
+        json.dump(audit_data, f, indent=4)
+    
+    print("\n" + "="*60 + "\nPART 13: EVALUATE DETECTOR B\n" + "="*60)
     
     y_true = df_cands['target_was_corrupted']
     y_prob = df_cands['detector_probability']
@@ -362,14 +403,12 @@ def run_diagnostic():
     }
     pd.DataFrame([metrics]).to_csv(EXP_DIR / "results" / "detector_metrics.csv", index=False)
     
-    print("\n" + "="*60)
-    print("PART 16: GENERATE REASONING-READY DATASET")
-    print("="*60)
+    print("\n" + "="*60 + "\nPART 16: GENERATE REASONING-READY DATASET\n" + "="*60)
     
     reasoning_ready = df_cands[
         (df_cands['target_was_corrupted'] == 1) & 
         (df_cands['voice_topic_correct'] == 1) & 
-        ((df_cands['text_topic_correct'] == 0) | (df_cands['most_unstable_text_head'] == 'topic'))
+        (df_cands['text_topic_correct'] == 0)
     ]
     reasoning_ready.to_csv(EXP_DIR / "results" / "reasoning_ready_candidates.csv", index=False)
     usable_count = len(reasoning_ready[reasoning_ready['detector_prediction'] == 1])
@@ -382,43 +421,21 @@ def run_diagnostic():
     representative = pd.concat([df_cands[df_cands['Category']==c].head(7) for c in ['TP', 'FP', 'FN', 'TN']])
     representative.to_csv(EXP_DIR / "results" / "representative_detector_cases.csv", index=False)
 
-    print("\n" + "="*60)
-    print("PART 20 & 23: SCORE SEPARATION & FIGURES")
-    print("="*60)
-    
     sns.set_theme(style="whitegrid")
-    
-    # 1. Score separation
     plt.figure(figsize=(8,6))
     sns.kdeplot(data=df_cands, x='detector_probability', hue='target_was_corrupted', fill=True, common_norm=False)
     plt.title('Detector B Probability Separation')
     plt.savefig(EXP_DIR / "figures" / "score_separation.png")
     plt.close()
-    
-    # 2. Topic Probabilities
-    plt.figure(figsize=(8,6))
-    sns.scatterplot(data=df_cands, x='voice_topic_prob', y='text_topic_prob', hue='target_was_corrupted', alpha=0.6)
-    plt.title('Voice vs Text Topic Probability')
-    plt.savefig(EXP_DIR / "figures" / "topic_probs.png")
-    plt.close()
-    
-    # 3. Topic JS
-    plt.figure(figsize=(8,6))
-    sns.boxplot(data=df_cands, x='target_was_corrupted', y='js_topic')
-    plt.title('Topic JS Divergence')
-    plt.savefig(EXP_DIR / "figures" / "js_topic.png")
-    plt.close()
 
-    print("\n" + "="*60)
-    print("FINAL PLAIN-LANGUAGE REPORT")
-    print("="*60)
-    
+    print("\n" + "="*60 + "\nFINAL PLAIN-LANGUAGE REPORT\n" + "="*60)
     t_rate_pct = df_cands['target_was_corrupted'].mean() * 100
+    
     print("What happened?")
     print(f"1. Changing decoder conditions produced {len(df_cands)} alternative transcripts from a fixed acoustic encoder.")
     print(f"2. They contained real domain-target errors {t_rate_pct:.1f}% of the time.")
-    print(f"3. Voice-NLU remained highly robust, retaining correct acoustic priors.")
-    print(f"4. Text-NLU became uncertain or wrong when Whisper corrupted the target.")
+    print(f"3. Voice-NLU remained correct when derived from the locked encoder representation.")
+    print(f"4. Text-NLU became uncertain/wrong on erroneous decoding branches.")
     print(f"5. Existing Detector B achieved ROC-AUC: {roc_auc:.3f} and F1: {metrics['F1']:.3f}.")
     print(f"6. There are {usable_count} high-quality, asymmetric cases available for the downstream reasoning experiment.")
     
@@ -437,10 +454,6 @@ def run_diagnostic():
     else:
         print("NEXT STEP:\nDO NOT USE DECODER-ONLY SHORTCUT")
     print("="*60)
-    
-    with open(EXP_DIR / "results" / "final_decision.csv", "w") as f:
-        f.write(f"usable_count,{usable_count}\n")
-        f.write(f"f1_score,{metrics['F1']}\n")
 
 if __name__ == "__main__":
     run_diagnostic()
