@@ -5,31 +5,14 @@ STEP 0: ARTIFACT AUDIT
 [✓] All project files and NLU artifacts verified.
 
 [+] Loading Whisper from local checkpoint: /home/spark2/Models/base.en.pt...
-Analyzing Samples:   3%|█▏                                         | 5/179 [00:02<01:39,  1.75it/s]
+Analyzing Samples: 100%|█████████████████████████████████████████| 179/179 [00:54<00:00,  3.30it/s]
 Traceback (most recent call last):
   File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/voice_nlu_corrupted_embedding/run_acoustic_diagnostic.py", line 361, in <module>
     run_diagnostic()
-  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/voice_nlu_corrupted_embedding/run_acoustic_diagnostic.py", line 224, in run_diagnostic
-    dec_res = whisper.decode(whisper_model, mel, whisper.DecodingOptions(fp16=False))
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
-    return func(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/whisper/decoding.py", line 824, in decode
-    result = DecodingTask(model, options).run(mel)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
-    return func(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/whisper/decoding.py", line 722, in run
-    languages, language_probs = self._detect_language(audio_features, tokens)
-                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/whisper/decoding.py", line 671, in _detect_language
-    lang_tokens, lang_probs = self.model.detect_language(
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
-    return func(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/whisper/decoding.py", line 42, in detect_language
-    raise ValueError(
-ValueError: This model doesn't have language tokens so it can't perform lang id
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/voice_nlu_corrupted_embedding/run_acoustic_diagnostic.py", line 321, in run_diagnostic
+    np.savez_compressed(EXP_DIR / "posterior_npz" / "text_posteriors.npz", **{str(i): t for i, v in enumerate(text_posteriors_list)})
+                                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/voice_nlu_corrupted_embedding/run_acoustic_diagnostic.py", line 321, in <dictcomp>
+    np.savez_compressed(EXP_DIR / "posterior_npz" / "text_posteriors.npz", **{str(i): t for i, v in enumerate(text_posteriors_list)})
+                                                                                      ^
+NameError: name 't' is not defined
