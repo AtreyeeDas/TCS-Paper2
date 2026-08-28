@@ -1,0 +1,17 @@
+mv /home/spark2/Models/gemma_2_models/gemma-3-1b-it/tokenizer.json /home/spark2/Models/gemma_2_models/gemma-3-1b-it/tokenizer.json.bak
+
+
+class GemmaReasoningEngine:
+    def __init__(self, model_path, device=DEVICE):
+        print(f"[+] Loading Gemma locally from: {model_path}")
+        self.device = device
+        
+        # Explicitly call GemmaTokenizer to force SentencePiece
+        self.tokenizer = GemmaTokenizer.from_pretrained(model_path, local_files_only=True)
+        
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            torch_dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
+            device_map="auto" if device == "cuda" else None,
+            local_files_only=True
+        )
