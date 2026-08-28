@@ -24,11 +24,11 @@ warnings.filterwarnings("ignore")
 # ==========================================
 ROOT_DIR = Path("/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment")
 DATASET_CSV = ROOT_DIR / "dataset" / "whisper_domain_multitarget_6000.csv"
-AUDIO_DIR = ROOT_DIR / "audios"
+AUDIO_DIR = ROOT_DIR / "audio"
 
 # Artifacts
-VOICE_MODELS_DIR = ROOT_DIR / "models"
-TEXT_MODELS_DIR = ROOT_DIR / "text_models"
+VOICE_MODELS_DIR = Path("/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/audio_nlu_models")
+TEXT_MODELS_DIR = Path("/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/text_nlu_models")
 TEXT_ENCODER_PATH = "/home/spark2/Models/all-MiniLM-L6-v2"
 
 # Outputs
