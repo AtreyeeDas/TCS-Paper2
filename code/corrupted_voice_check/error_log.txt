@@ -1,22 +1,22 @@
-============================================================
 PART 1: ARTIFACT AUDIT & LOADING
 ============================================================
+[+] Found 300 valid audio samples for diagnostic from 300 candidates.
 Voice-NLU expected input dimension: 128
 Text-NLU expected input dimension: 128
 Detector B expected feature count: 51
 Detector B threshold: 0.05
-Number of dataset terms used for exclusion: 442
-Number of candidate distractors remaining: 28 / 50
+Number of dataset terms used for exclusion: 944
+Number of candidate distractors remaining: 23 / 50
 Encoder fixed-decoding implementation: PASS (using enc_out passed to whisper.decode)
 
 ============================================================
 PART 24: SANITY CHECK (FIRST 10 SAMPLES)
 ============================================================
-Generating Fixed-Encoder Candidates: 100%|██████████████████████████| 300/300 [00:00<00:00, 45003.26it/s]
+Generating Fixed-Encoder Candidates:   0%|                                       | 0/300 [00:01<?, ?it/s]
 Traceback (most recent call last):
-  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/error_detector/decoder_only_detected_diag.py", line 419, in <module>
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/error_detector/decoder_only_detected_diag.py", line 462, in <module>
     run_diagnostic()
-  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/error_detector/decoder_only_detected_diag.py", line 368, in run_diagnostic
-    audit_data["actual_runtime_feature_count"] = feat_vector.shape[1]
-                                                 ^^^^^^^^^^^
-UnboundLocalError: cannot access local variable 'feat_vector' where it is not associated with a value
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/error_detector/decoder_only_detected_diag.py", line 326, in run_diagnostic
+    candidate_text = dec_res.text.strip()
+                     ^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'text'
