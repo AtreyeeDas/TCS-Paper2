@@ -452,7 +452,15 @@ class MasterExperimentSuite:
         clf_b = Pipeline([("scaler", StandardScaler()), ("clf", LogisticRegression(class_weight="balanced", max_iter=LOGISTIC_REGRESSION_MAX_ITER, random_state=RANDOM_SEED))])
         clf_b.fit(df_fb_corr[train_mask].values, y_real[train_mask])
         t_b_real, _ = find_optimal_validation_threshold(y_val, clf_b.predict_proba(df_fb_corr[val_mask].values)[:, 1])
+        # Save REAL-WHISPER Detector B for runtime inference
+        joblib.dump(clf_b,MODELS_CACHE_DIR / "real_whisper_detector_B.joblib")
 
+        with open(MODELS_CACHE_DIR / "real_whisper_detector_B_threshold.json", "w") as f:
+            json.dump({"threshold": t_b_real}, f, indent=4)
+
+        # Save exact feature order required at runtime
+        with open(MODELS_CACHE_DIR / "real_whisper_detector_B_features.json", "w") as f:
+            json.dump(list(df_fb_corr.columns), f, indent=4)
         p_rb = df_fa_corr.loc[unseen_mask, "weighted_disagreement"].values
         p_a = clf_a.predict_proba(df_fa_corr[unseen_mask].values)[:, 1]
         p_b = clf_b.predict_proba(df_fb_corr[unseen_mask].values)[:, 1]
