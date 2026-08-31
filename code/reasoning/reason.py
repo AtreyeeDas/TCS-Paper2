@@ -222,7 +222,8 @@ def run_pipeline():
     detector_B = joblib.load(DETECTOR_DIR / "Detector_B_STRICT_ASR_INDUCED.joblib")
     with open(DETECTOR_DIR / "strict_detector_thresholds.json", "r") as f:
         thresholds = json.load(f)
-        thresh_A, thresh_B = thresholds["Detector_A"], thresholds["Detector_B"]
+        thresh_A = float(thresholds["threshold_A"])
+        thresh_B = float(thresholds["threshold_B"])
 
     # 2. Dataset Preparation
     df = pd.read_csv(DATASET_CSV)
@@ -345,10 +346,23 @@ def run_pipeline():
             latencies.append(timers)
             
         # Ground Truth & Semantic Checks
-        # Strict ASR Induced condition: clean Text-NLU correct & corrupted Text-NLU wrong
-        clean_text_correct = 1 if str(row.get('text_topic', '')) == str(row.get('topic_label', '')) else 0 
-        decoded_text_correct = 1 if t_preds['topic'] == str(row.get('topic_label', '')) else 0
-        strict_asr_error = 1 if (clean_text_correct == 1 and decoded_text_correct == 0) else 0
+        # ---------------------------------------------------------
+# Strict ASR-induced semantic error
+# clean text must be correct on ALL four heads,
+# decoded text must be wrong on >=1 head
+# ----------------------------------------------------------
+
+gt_labels = {
+    h: str(row.get(f"{h}_label", ""))
+    for h in HEADS
+}
+
+clean_text_correct = int(
+    all(str(text_clean_preds[h]) == gt_labels[h] for h in HEADS ))
+
+        decoded_text_correct = int(all( str(t_preds[h]) == gt_labels[h] for h in HEADS ))
+
+        strict_asr_error = int(clean_text_correct == 1 and decoded_text_correct == 0) 
 
         res_dict = {
             "sample_id": sample_id,
