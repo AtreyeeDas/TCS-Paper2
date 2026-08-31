@@ -1,0 +1,46 @@
+
+--- ENVIRONMENT SPECIFICATIONS ---
+python_version: 3.11.15 (main, Jun 11 2026, 15:11:53) [GCC 14.3.0]
+pytorch_version: 2.15.0.dev20260823+cu130
+cuda_version: 13.0
+cuda_available: True
+gpu_name: NVIDIA GB10
+cpu_ram_gb: 121.62768173217773
+
+ARTIFACT VALIDATION PASSED
+
+Loading Foundation Models...
+Loading weights: 100%|███████████████████████████████████████████████████████████████████| 103/103 [00:00<00:00, 17104.70it/s]
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights: 100%|██████████████████████████████████████████████████████████████████████| 340/340 [00:11<00:00, 30.27it/s]
+Loading NLU Projections & MLPs...
+
+Unseen runtime evaluation samples: 900
+Running E2E Inference — UNSEEN:   0%|                                                                 | 0/900 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/reasoning/reason.py", line 506, in <module>
+    run_pipeline()
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/reasoning/reason.py", line 298, in run_pipeline
+    dec_res = whisper.decode(whisper_model, mel, decode_options)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/whisper/decoding.py", line 824, in decode
+    result = DecodingTask(model, options).run(mel)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/whisper/decoding.py", line 722, in run
+    languages, language_probs = self._detect_language(audio_features, tokens)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/whisper/decoding.py", line 671, in _detect_language
+    lang_tokens, lang_probs = self.model.detect_language(
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/whisper/decoding.py", line 42, in detect_language
+    raise ValueError(
+ValueError: This model doesn't have language tokens so it can't perform lang id
