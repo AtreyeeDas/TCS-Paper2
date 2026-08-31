@@ -1,12 +1,10 @@
 Traceback (most recent call last):
   File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/reasoning/reason.py", line 509, in <module>
     run_pipeline()
-  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/reasoning/reason.py", line 320, in run_pipeline
-    text_clean_preds[h] = shared_encoders[f"{h}_label"].inverse_transform(pred_class_int)[0]
-                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/sklearn/preprocessing/_label.py", line 151, in inverse_transform
-    y = column_or_1d(y, warn=True)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/sklearn/utils/validation.py", line 1485, in column_or_1d
-    raise ValueError(
-ValueError: y should be a 1d array, got an array of shape () instead.
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/reasoning/reason.py", line 342, in run_pipeline
+    df_a = pd.DataFrame([feat_a])[detector_A.feature_names_in_]
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/sklearn/pipeline.py", line 1294, in feature_names_in_
+    return self.steps[0][1].feature_names_in_
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'StandardScaler' object has no attribute 'feature_names_in_'
