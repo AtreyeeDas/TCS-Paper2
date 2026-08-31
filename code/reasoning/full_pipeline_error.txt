@@ -1,0 +1,8 @@
+Master dataset: /home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/dataset/nlu_robust_6000_scenario_paraphrase_FINAL_70_10_20.csv
+Paired ASR dataset: /home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/dataset/whisper_domain_multitarget_FINAL_REPAIRED_6000.csv
+Traceback (most recent call last):
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/reasoning/full_pipeline2.py", line 1630, in <module>
+    main()
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/reasoning/full_pipeline2.py", line 513, in main
+    raise RuntimeError(
+RuntimeError: 483 unseen samples have no paired erroneous transcript.
