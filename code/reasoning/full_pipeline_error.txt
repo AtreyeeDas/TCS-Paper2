@@ -1,55 +1,28 @@
-(asil_nlu_master) spark2@01HW2722098:~/users/intern/Atreyee-Das/NLU_Robust_Experiment/code$ python full_runtime/reason2.py
+[+] Processing Audio: nlu_0001_01.wav
 
---- ENVIRONMENT SPECIFICATIONS ---
-python_version: 3.11.15 (main, Jun 11 2026, 15:11:53) [GCC 14.3.0]
-pytorch_version: 2.15.0.dev20260823+cu130
-cuda_version: 13.0
-cuda_available: True
-gpu_name: NVIDIA GB10
-cpu_ram_gb: 121.62768173217773
+==================================================
+PIPELINE RESULTS
+==================================================
+Whisper Transcript:  "The current findings was reviewed in relation to myocardial ischemia and ST segment elevation. At the next decision point, the reviewing organization after the latest information was reviewed."
 
-✓ ARTIFACT VALIDATION PASSED
+--- NLU Disagreements ---
+[MATCH] DOMAIN:
+     Voice NLU -> medical
+     Text NLU  -> medical
+[MISMATCH] SUBDOMAIN:
+     Voice NLU -> neurology
+     Text NLU  -> cardiology
+[MISMATCH] TOPIC:
+     Voice NLU -> migraine with aura
+     Text NLU  -> ventricular tachycardia
+[MISMATCH] DOCUMENT_TYPE:
+     Voice NLU -> cardiology consultation
+     Text NLU  -> cardiac imaging report
 
-Loading authoritative master dataset...
+--- Error Detection ---
+Detector B Probability:  0.0000 (Threshold: 0.5500)
+[✓] DETECTOR FLAG: NORMAL (Routing to Baseline Gemma)
 
-✓ Master dataset validated.
-  Samples: 6000
-  Scenarios: 600
-  Scenario split: {'train': 420, 'unseen': 90, 'validation': 90}
-
-Unseen runtime evaluation:
-  Utterances: 900
-  Scenarios: 90
-
-Loading Whisper...
-✓ Whisper loaded.
-
-Loading MiniLM...
-Loading weights: 100%|███████████████████████████████████████████████████████████████████| 103/103 [00:00<00:00, 11613.26it/s]
-✓ MiniLM loaded.
-
-Loading Gemma...
-[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
-Loading weights: 100%|██████████████████████████████████████████████████████████████████████| 340/340 [00:13<00:00, 26.03it/s]
-✓ Gemma loaded.
-
-Loading frozen scalers...
-
-Loading frozen projections...
-✓ Projections loaded.
-
-Loading Voice-NLU / Text-NLU heads...
-✓ All eight NLU MLP heads loaded.
-
-Loading strict ASR-induced detectors...
-✓ Detector A threshold: 0.4800000000000001
-✓ Detector B threshold: 0.5500000000000002
-Traceback (most recent call last):
-  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/full_runtime/reason2.py", line 3610, in <module>
-    run_pipeline()
-  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/full_runtime/reason2.py", line 1499, in run_pipeline
-    detector_A.feature_names_in_
-  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/sklearn/pipeline.py", line 1294, in feature_names_in_
-    return self.steps[0][1].feature_names_in_
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'StandardScaler' object has no attribute 'feature_names_in_'
+--- Gemma Response ---
+Gemma Answer: 
+==================================================
