@@ -11,9 +11,9 @@ cpu_ram_gb: 121.62768173217773
 ARTIFACT VALIDATION PASSED
 
 Loading Foundation Models...
-Loading weights: 100%|███████████████████████████████████████████████████████████████████| 103/103 [00:00<00:00, 11261.20it/s]
+Loading weights: 100%|███████████████████████████████████████████████████████████████████| 103/103 [00:00<00:00, 14070.72it/s]
 [transformers] `torch_dtype` is deprecated! Use `dtype` instead!
-Loading weights: 100%|██████████████████████████████████████████████████████████████████████| 340/340 [00:12<00:00, 27.26it/s]
+Loading weights: 100%|██████████████████████████████████████████████████████████████████████| 340/340 [00:13<00:00, 25.34it/s]
 Loading NLU Projections & MLPs...
 
 Unseen runtime evaluation samples: 900
@@ -21,16 +21,10 @@ Running E2E Inference — UNSEEN:   0%|                                         
 Traceback (most recent call last):
   File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/reasoning/reason.py", line 506, in <module>
     run_pipeline()
-  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/reasoning/reason.py", line 337, in run_pipeline
-    feat_a, feat_b = extract_detector_features(v_preds, t_preds, v_probs, t_probs, shared_encoders)
-                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/reasoning/reason.py", line 171, in extract_detector_features
-    feat_b[f"{h}_js_divergence"] = align_and_js(v_p, v_cls, t_p, t_cls)
-                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/reasoning/reason.py", line 137, in align_and_js
-    v_a = np.array([v_probs[np.where(v_classes == c)[0][0]] if c in v_classes else 1e-12 for c in u_cls])
-                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/reasoning/reason.py", line 137, in <listcomp>
-    v_a = np.array([v_probs[np.where(v_classes == c)[0][0]] if c in v_classes else 1e-12 for c in u_cls])
-                    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-IndexError: index 61 is out of bounds for axis 0 with size 61
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/reasoning/reason.py", line 339, in run_pipeline
+    df_a = pd.DataFrame([feat_a])[detector_A.feature_names_in_]
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/sklearn/pipeline.py", line 1294, in feature_names_in_
+    return self.steps[0][1].feature_names_in_
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'StandardScaler' object has no attribute 'feature_names_in_'
