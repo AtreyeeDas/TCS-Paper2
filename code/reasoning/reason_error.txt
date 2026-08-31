@@ -1,10 +1,21 @@
+Running E2E Inference — UNSEEN:   0%|                                                                 | 0/900 [00:01<?, ?it/s]
 Traceback (most recent call last):
   File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/reasoning/reason.py", line 509, in <module>
     run_pipeline()
-  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/reasoning/reason.py", line 342, in run_pipeline
-    df_a = pd.DataFrame([feat_a])[detector_A.feature_names_in_]
-                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/sklearn/pipeline.py", line 1294, in feature_names_in_
-    return self.steps[0][1].feature_names_in_
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'StandardScaler' object has no attribute 'feature_names_in_'
+  File "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/code/reasoning/reason.py", line 346, in run_pipeline
+    prob_b = detector_B.predict_proba(df_b.values)[0][1]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/sklearn/pipeline.py", line 903, in predict_proba
+    Xt = transform.transform(Xt)
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/sklearn/utils/_set_output.py", line 319, in wrapped
+    data_to_wrap = f(self, X, *args, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/sklearn/preprocessing/_data.py", line 1062, in transform
+    X = validate_data(
+        ^^^^^^^^^^^^^^
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/sklearn/utils/validation.py", line 2965, in validate_data
+    _check_n_features(_estimator, X, reset=reset)
+  File "/home/spark2/miniconda3/envs/asil_nlu_master/lib/python3.11/site-packages/sklearn/utils/validation.py", line 2829, in _check_n_features
+    raise ValueError(
+ValueError: X has 49 features, but StandardScaler is expecting 51 features as input.
