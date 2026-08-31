@@ -317,7 +317,7 @@ def run_pipeline():
             probs = t_mlps[h].predict_proba(clean_128)[0]
             text_clean_probs[h] = probs
             pred_class_int=t_mlps[h].classes_[np.argmax(probs)]
-            text_clean_preds[h] = shared_encoders[f"{h}_label"].inverse_transform(pred_class_int)[0]
+            text_clean_preds[h] = shared_encoders[f"{h}_label"].inverse_transform([pred_class_int])[0]
 
         # Text NLU Path
         t0 = time.perf_counter()
@@ -331,7 +331,7 @@ def run_pipeline():
             probs = t_mlps[h].predict_proba(t_128)[0]
             t_probs[h] = probs
             pred_class_int=t_mlps[h].classes_[np.argmax(probs)]
-            t_preds[h] = shared_encoders[f"{h}_label"].inverse_transform(pred_class_int)[0]
+            t_preds[h] = shared_encoders[f"{h}_label"].inverse_transform([pred_class_int])[0]
         if DEVICE == "cuda": torch.cuda.synchronize()
         timers['text_nlu_ms'] = (time.perf_counter() - t0) * 1000
         
