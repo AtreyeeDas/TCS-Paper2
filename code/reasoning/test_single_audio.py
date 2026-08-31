@@ -1,5 +1,6 @@
 import os
-import time
+import re
+import json
 import warnings
 import numpy as np
 import pandas as pd
@@ -18,12 +19,13 @@ warnings.filterwarnings("ignore")
 # ==============================================================================
 # 1. CONFIGURATION & LOCAL PATHS
 # ==============================================================================
-# CHANGE THIS TO YOUR SPECIFIC TEST FILE (.wav, .flac, or .mp3)
-TEST_AUDIO_PATH = "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/audio/your_test_file.flac" 
+# Point this to your specific audio file to test
+TEST_AUDIO_PATH = "/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment/audio/nlu_0001_01.wav"
 
 PROJECT_ROOT = Path("/home/spark2/users/intern/Atreyee-Das/NLU_Robust_Experiment")
 MODELS_DIR = PROJECT_ROOT / "models"
 DETECTOR_DIR = PROJECT_ROOT / "detector"
+EXP_MODELS_DIR = PROJECT_ROOT / "error_detector_experiments" / "artifacts" / "models"
 
 WHISPER_PATH = "/home/spark2/Models/base.en.pt"
 MINILM_PATH = "/home/spark2/Models/all-MiniLM-L6-v2"
@@ -35,7 +37,7 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 EPS = 1e-12
 
 # ==============================================================================
-# 2. ARCHITECTURE & DETECTOR FEATURE FUNCTIONS[span_6](start_span)[span_6](end_span)
+# 2. ARCHITECTURE DEFINITIONS
 # ==============================================================================
 class VoiceHierarchicalProjection(nn.Module):
     def __init__(self, input_dim=512, projection_dim=128):
@@ -53,17 +55,22 @@ class TextHierarchicalProjection(nn.Module):
         )
     def forward(self, x): return F.normalize(self.projector(x), p=2, dim=1)
 
-def entropy(p):
-    p = np.clip(p, EPS, 1.0)
-    return float(-np.sum((p / p.sum()) * np.log(p / p.sum())))
+# ==============================================================================
+# 3. FEATURE EXTRACTION & POSTERIOR METRICS
+# ==============================================================================
+def calc_entropy(probs):
+    p = np.clip(probs, EPS, 1.0)
+    p = p / p.sum()
+    return float(-np.sum(p * np.log(p)))
 
-def margin(p):
-    s = np.sort(p)[::-1]
-    return float(s[0] - s[1]) if len(p) >= 2 else 1.0
+def calc_margin(probs):
+    s = np.sort(probs)[::-1]
+    return float(s[0] - s[1]) if len(s) >= 2 else 1.0
 
 def aligned_js(vp, vc, tp, tc):
     classes = sorted(set(vc) | set(tc))
-    vmap, tmap = {c: p for c, p in zip(vc, vp)}, {c: p for c, p in zip(tc, tp)}
+    vmap = {c: p for c, p in zip(vc, vp)}
+    tmap = {c: p for c, p in zip(tc, tp)}
     va = np.array([vmap.get(c, EPS) for c in classes])
     ta = np.array([tmap.get(c, EPS) for c in classes])
     va, ta = va / va.sum(), ta / ta.sum()
@@ -101,10 +108,10 @@ def extract_detector_features(v_preds, t_preds, v_probs, t_probs, v_mlps, t_mlps
         fb[f"{short}_text_prob_of_voice_label"] = text_prob_voice
         fb[f"{short}_voice_prob_of_text_label"] = voice_prob_text
         fb[f"{short}_js_divergence"] = js
-        fb[f"{short}_voice_entropy"] = entropy(vp)
-        fb[f"{short}_text_entropy"] = entropy(tp)
-        fb[f"{short}_voice_margin"] = margin(vp)
-        fb[f"{short}_text_margin"] = margin(tp)
+        fb[f"{short}_voice_entropy"] = calc_entropy(vp)
+        fb[f"{short}_text_entropy"] = calc_entropy(tp)
+        fb[f"{short}_voice_margin"] = calc_margin(vp)
+        fb[f"{short}_text_margin"] = calc_margin(tp)
 
         voice_confs.append(v_conf)
         text_confs.append(t_conf)
@@ -134,21 +141,63 @@ def get_nlu_preds(emb_128, mlps, shared_encoders):
     return preds, probs_dict
 
 # ==============================================================================
-# 3. SINGLE INFERENCE SCRIPT
+# 4. LOAD DETECTOR ARTIFACTS
 # ==============================================================================
-def run_single_inference():
+def load_detector():
+    """Finds and loads the requested real_whisper_detector_B artifacts."""
+    search_paths = [
+        (EXP_MODELS_DIR / "real_whisper_detector_B.joblib",
+         EXP_MODELS_DIR / "real_whisper_detector_B_features.json",
+         EXP_MODELS_DIR / "real_whisper_detector_B_threshold.json"),
+        (DETECTOR_DIR / "real_whisper_detector_B.joblib",
+         DETECTOR_DIR / "real_whisper_detector_B_features.json",
+         DETECTOR_DIR / "real_whisper_detector_B_threshold.json"),
+        (DETECTOR_DIR / "Detector_B_STRICT_ASR_INDUCED.joblib",
+         None,
+         DETECTOR_DIR / "strict_detector_thresholds.json")
+    ]
+    
+    detector_model, feature_names, threshold = None, None, 0.50
+
+    for model_p, feat_p, thresh_p in search_paths:
+        if model_p.exists():
+            print(f"[+] Loading Detector Model from: {model_p}")
+            detector_model = joblib.load(model_p)
+            
+            if feat_p and feat_p.exists():
+                with open(feat_p, "r") as f:
+                    feature_names = json.load(f)
+                print(f"[+] Loaded Feature Schema ({len(feature_names)} features) from: {feat_p}")
+            
+            if thresh_p and thresh_p.exists():
+                with open(thresh_p, "r") as f:
+                    t_data = json.load(f)
+                    threshold = float(t_data.get("threshold", t_data.get("threshold_B", 0.50)))
+                print(f"[+] Loaded Threshold ({threshold:.4f}) from: {thresh_p}")
+            break
+
+    if detector_model is None:
+        raise FileNotFoundError("Could not find a valid detector .joblib file.")
+        
+    return detector_model, feature_names, threshold
+
+# ==============================================================================
+# 5. SINGLE-SAMPLE PIPELINE EXECUTION
+# ==============================================================================
+def run_single_audio_diagnostic():
     if not os.path.exists(TEST_AUDIO_PATH):
         print(f"[!] Error: Test audio file not found at {TEST_AUDIO_PATH}")
         return
 
-    print("\n[+] Loading Models (this takes a moment)...")
+    print("\n[+] Loading Base Models (Whisper, MiniLM, Gemma)...")
     whisper_model = whisper.load_model(WHISPER_PATH, device=DEVICE)
     minilm_model = SentenceTransformer(MINILM_PATH, device=DEVICE)
     
-    # Gemma loaded with use_fast=False to fix Rust parsing crash[span_7](start_span)[span_7](end_span)
-    gemma_tokenizer = AutoTokenizer.from_pretrained(GEMMA_PATH, local_files_only=True, use_fast=False) 
+    gemma_tokenizer = AutoTokenizer.from_pretrained(GEMMA_PATH, local_files_only=True, use_fast=False)
     gemma_dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
-    gemma_model = AutoModelForCausalLM.from_pretrained(GEMMA_PATH, local_files_only=True, torch_dtype=gemma_dtype, device_map="auto")
+    gemma_model = AutoModelForCausalLM.from_pretrained(
+        GEMMA_PATH, local_files_only=True, torch_dtype=gemma_dtype, device_map="auto"
+    )
 
     # Load NLU Pipelines
     v_scaler = joblib.load(MODELS_DIR / "voice_whisper_scaler_FINAL_70_10_20.joblib")
@@ -166,17 +215,11 @@ def run_single_inference():
     v_mlps = {h: joblib.load(MODELS_DIR / f"voice_{h}_label_mlp_FINAL_70_10_20.joblib") for h in HEADS}
     t_mlps = {h: joblib.load(MODELS_DIR / f"text_{h}_label_mlp_FINAL_70_10_20.joblib") for h in HEADS}
     
-    detector_A = joblib.load(DETECTOR_DIR / "Detector_A_STRICT_ASR_INDUCED.joblib")
-    detector_B = joblib.load(DETECTOR_DIR / "Detector_B_STRICT_ASR_INDUCED.joblib")
+    detector_b, feature_schema, threshold_b = load_detector()
 
-    import json
-    with open(DETECTOR_DIR / "strict_detector_thresholds.json", "r") as f:
-        thresholds = json.load(f)
-        thresh_B = float(thresholds["threshold_B"])
-
-    print(f"\n[+] Processing Audio: {os.path.basename(TEST_AUDIO_PATH)}")
+    print(f"\n[+] Executing Inference on: {os.path.basename(TEST_AUDIO_PATH)}")
     
-    # 1. Whisper Acoustic
+    # 1. Whisper Acoustic (Encoder)
     audio = whisper.load_audio(str(TEST_AUDIO_PATH))
     audio = whisper.pad_or_trim(audio)
     mel = whisper.log_mel_spectrogram(audio).to(DEVICE)
@@ -185,81 +228,124 @@ def run_single_inference():
         enc_out = whisper_model.encoder(mel.unsqueeze(0))
         emb_512 = enc_out.mean(dim=1).cpu().numpy().astype(np.float32)
 
-    # 2. Voice NLU
+    # 2. Voice NLU Path
     v_scaled = v_scaler.transform(emb_512).astype(np.float32)
     with torch.no_grad():
         v_128 = v_proj(torch.tensor(v_scaled, dtype=torch.float32, device=DEVICE)).cpu().numpy()
     v_preds, v_probs = get_nlu_preds(v_128, v_mlps, shared_encoders)
 
-    # 3. Whisper Decoder[span_8](start_span)[span_8](end_span)[span_9](start_span)[span_9](end_span)
+    # 3. Whisper Decoder (Language explicitly set to English)
     decode_options = whisper.DecodingOptions(fp16=(DEVICE == "cuda"), temperature=0.0, language="en")
     with torch.no_grad():
         dec_res = whisper.decode(whisper_model, mel, decode_options)
         decoded_transcript = dec_res.text.strip()
 
-    # 4. Text NLU
+    # 4. Text NLU Path
     emb_384 = minilm_model.encode([decoded_transcript], convert_to_numpy=True, normalize_embeddings=False).astype(np.float32)
     t_scaled = t_scaler.transform(emb_384).astype(np.float32)
     with torch.no_grad():
         t_128 = t_proj(torch.tensor(t_scaled, dtype=torch.float32, device=DEVICE)).cpu().numpy()
     t_preds, t_probs = get_nlu_preds(t_128, t_mlps, shared_encoders)
 
-    # 5. Extract Features & Detect Error[span_10](start_span)[span_10](end_span)
+    # 5. Detector B Feature Alignment & Prediction
     feat_a, feat_b = extract_detector_features(v_preds, t_preds, v_probs, t_probs, v_mlps, t_mlps, shared_encoders)
-    df_b = pd.DataFrame([feat_b])
-    prob_b = float(detector_B.predict_proba(df_b.values)[0, 1])
-    is_suspicious = prob_b >= thresh_B
+    
+    if feature_schema is not None:
+        # Reorder columns to exactly match training order
+        df_feat = pd.DataFrame([feat_b])
+        missing = [f for f in feature_schema if f not in df_feat.columns]
+        if missing:
+            print(f"[!] Warning: Missing features for schema: {missing}")
+            for m in missing: df_feat[m] = 0.0
+        detector_input = df_feat[feature_schema].values
+    else:
+        detector_input = pd.DataFrame([feat_b]).values
 
-    print("\n" + "="*50)
-    print("PIPELINE RESULTS")
-    print("="*50)
-    print(f"Whisper Transcript:  \"{decoded_transcript}\"")
-    print("\n--- NLU Disagreements ---")
+    prob_b = float(detector_b.predict_proba(detector_input)[0, 1])
+    is_suspicious = prob_b >= threshold_b
+
+    # ==============================================================================
+    # 6. DETAILED OUTPUT DISPLAY
+    # ==============================================================================
+    print("\n" + "="*70)
+    print("TRANSCRIPT & NLU POSTERIOR PROBABILITY BREAKDOWN")
+    print("="*70)
+    print(f"Whisper Decoded Transcript:\n\"{decoded_transcript}\"")
+    
+    print("\n--- Semantic Head Posteriors & Disagreements ---")
     for h in HEADS:
         match_status = "MATCH" if v_preds[h] == t_preds[h] else "MISMATCH"
-        print(f"[{match_status}] {h.upper()}:")
-        print(f"     Voice NLU -> {v_preds[h]}")
-        print(f"     Text NLU  -> {t_preds[h]}")
+        v_p = v_probs[h]
+        t_p = t_probs[h]
+        v_cls = shared_encoders[f"{h}_label"].inverse_transform(v_mlps[h].classes_)
+        t_cls = shared_encoders[f"{h}_label"].inverse_transform(t_mlps[h].classes_)
+        
+        v_top_idx = np.argsort(v_p)[::-1][:3]
+        t_top_idx = np.argsort(t_p)[::-1][:3]
+        
+        print(f"\n[{match_status}] Head: {h.upper()}")
+        print(f"  * Voice NLU Prediction : {v_preds[h]:<25} (Top-1 Conf: {np.max(v_p):.4f}, Entropy: {calc_entropy(v_p):.3f})")
+        print(f"    Top-3 Distribution   : {', '.join([f'{v_cls[i]}: {v_p[i]:.3f}' for i in v_top_idx])}")
+        print(f"  * Text NLU Prediction  : {t_preds[h]:<25} (Top-1 Conf: {np.max(t_p):.4f}, Entropy: {calc_entropy(t_p):.3f})")
+        print(f"    Top-3 Distribution   : {', '.join([f'{t_cls[i]}: {t_p[i]:.3f}' for i in t_top_idx])}")
+        print(f"  * Cross-modal Divergence: JS Divergence = {feat_b[f'{h}_js_divergence']:.4f}")
 
-    print("\n--- Error Detection ---")
-    print(f"Detector B Probability:  {prob_b:.4f} (Threshold: {thresh_B:.4f})")
+    print("\n" + "="*70)
+    print("DETECTOR B EVALUATION")
+    print("="*70)
+    print(f"Detector B Output Probability : {prob_b:.4f}")
+    print(f"Operational Decision Threshold: {threshold_b:.4f}")
     if is_suspicious:
-        print("[!] DETECTOR FLAG: SUSPICIOUS (Routing to Gemma Correction)")
+        print("[!] VERDICT: ERROR / SUSPICIOUS (Cross-modal divergence exceeds threshold)")
     else:
-        print("[✓] DETECTOR FLAG: NORMAL (Routing to Baseline Gemma)")
+        print("[✓] VERDICT: NORMAL / RELIABLE (Transcript aligns with acoustic evidence)")
 
-    # 6. Gemma Reasoning
-    print("\n--- Gemma Response ---")
+    # ==============================================================================
+    # 7. LLM REASONING & INTENT RECOVERY
+    # ==============================================================================
+    print("\n" + "="*70)
+    print("GEMMA REASONING & USER INTENT DIAGNOSIS")
+    print("="*70)
+    
     if is_suspicious:
-        prompt = f"""You are answering a user's request represented by the speech transcript below.
-The transcript has been flagged as potentially containing an ASR-induced semantic error.
+        prompt = f"""You are an expert AI assistant analyzing a spoken audio transcript that has been flagged as potentially containing an ASR (speech recognition) error.
 
-Transcript:
-{decoded_transcript}
+Decoded Transcript:
+"{decoded_transcript}"
 
-Independent acoustic semantic evidence:
-Domain: {v_preds['domain']}
-Topic: {v_preds['topic']}
+Independent Acoustic Evidence (extracted directly from speech audio):
+- Domain: {v_preds['domain']} (Confidence: {np.max(v_probs['domain']):.2f})
+- Subdomain: {v_preds['subdomain']} (Confidence: {np.max(v_probs['subdomain']):.2f})
+- Topic: {v_preds['topic']} (Confidence: {np.max(v_probs['topic']):.2f})
+- Document Type: {v_preds['document_type']} (Confidence: {np.max(v_probs['document_type']):.2f})
 
-Use the acoustic semantic evidence to resolve ambiguity only when it provides supporting evidence.
-Do not invent facts. Answer briefly."""
+Please answer the following three points concisely:
+1. What does the raw transcript literally say?
+2. What acoustic/semantic discrepancy was detected, and what was the user's likely intended request?
+3. Provide the corrected response addressing the user's true intent."""
     else:
-        prompt = f"""You are answering a user's request represented by the speech transcript below.
+        prompt = f"""You are an expert AI assistant analyzing a user's spoken request.
 
-Transcript:
-{decoded_transcript}
+Decoded Transcript:
+"{decoded_transcript}"
 
-Answer briefly and only using information supported by the transcript.
-Do not invent facts."""
+Acoustic Verification Status: Verified reliable by speech semantic model.
+
+Please provide a concise, direct response addressing the user's statement or question."""
 
     inputs = gemma_tokenizer(prompt, return_tensors="pt").to(DEVICE)
     with torch.no_grad():
-        outputs = gemma_model.generate(**inputs, max_new_tokens=30, do_sample=False, temperature=None)
+        outputs = gemma_model.generate(
+            **inputs, 
+            max_new_tokens=150, 
+            do_sample=False, 
+            temperature=None
+        )
     gen_tokens = outputs[:, inputs["input_ids"].shape[1]:]
     answer = gemma_tokenizer.batch_decode(gen_tokens, skip_special_tokens=True)[0].strip()
     
-    print(f"Gemma Answer: {answer}")
-    print("="*50 + "\n")
+    print(answer)
+    print("="*70 + "\n")
 
 if __name__ == "__main__":
-    run_single_inference()
+    run_single_audio_diagnostic()
