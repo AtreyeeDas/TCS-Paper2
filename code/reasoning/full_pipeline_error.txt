@@ -1,28 +1,50 @@
-[+] Processing Audio: nlu_0001_01.wav
++] Executing Inference on: nlu_0001_01.wav
 
-==================================================
-PIPELINE RESULTS
-==================================================
-Whisper Transcript:  "The current findings was reviewed in relation to myocardial ischemia and ST segment elevation. At the next decision point, the reviewing organization after the latest information was reviewed."
+======================================================================
+TRANSCRIPT & NLU POSTERIOR PROBABILITY BREAKDOWN
+======================================================================
+Whisper Decoded Transcript:
+"The current findings was reviewed in relation to myocardial ischemia and ST segment elevation. At the next decision point, the reviewing organization after the latest information was reviewed."
 
---- NLU Disagreements ---
-[MATCH] DOMAIN:
-     Voice NLU -> medical
-     Text NLU  -> medical
-[MISMATCH] SUBDOMAIN:
-     Voice NLU -> neurology
-     Text NLU  -> cardiology
-[MISMATCH] TOPIC:
-     Voice NLU -> migraine with aura
-     Text NLU  -> ventricular tachycardia
-[MISMATCH] DOCUMENT_TYPE:
-     Voice NLU -> cardiology consultation
-     Text NLU  -> cardiac imaging report
+--- Semantic Head Posteriors & Disagreements ---
 
---- Error Detection ---
-Detector B Probability:  0.0000 (Threshold: 0.5500)
-[✓] DETECTOR FLAG: NORMAL (Routing to Baseline Gemma)
+[MATCH] Head: DOMAIN
+  * Voice NLU Prediction : medical                   (Top-1 Conf: 0.9727, Entropy: 0.159)
+    Top-3 Distribution   : medical: 0.973, general: 0.010, legal: 0.009
+  * Text NLU Prediction  : medical                   (Top-1 Conf: 0.9612, Entropy: 0.212)
+    Top-3 Distribution   : medical: 0.961, legal: 0.014, general: 0.013
+  * Cross-modal Divergence: JS Divergence = 0.0008
 
---- Gemma Response ---
-Gemma Answer: 
-==================================================
+[MISMATCH] Head: SUBDOMAIN
+  * Voice NLU Prediction : neurology                 (Top-1 Conf: 0.5390, Entropy: 1.008)
+    Top-3 Distribution   : neurology: 0.539, cardiology: 0.325, pharmacology: 0.130
+  * Text NLU Prediction  : cardiology                (Top-1 Conf: 0.5759, Entropy: 1.075)
+    Top-3 Distribution   : cardiology: 0.576, neurology: 0.251, pharmacology: 0.150
+  * Cross-modal Divergence: JS Divergence = 0.0694
+
+[MISMATCH] Head: TOPIC
+  * Voice NLU Prediction : migraine with aura        (Top-1 Conf: 0.4264, Entropy: 1.743)
+    Top-3 Distribution   : migraine with aura: 0.426, ventricular tachycardia: 0.206, atrial fibrillation: 0.160
+  * Text NLU Prediction  : ventricular tachycardia   (Top-1 Conf: 0.6056, Entropy: 1.409)
+    Top-3 Distribution   : ventricular tachycardia: 0.606, cardiac catheterization: 0.127, troponin: 0.082
+  * Cross-modal Divergence: JS Divergence = 0.4551
+
+[MISMATCH] Head: DOCUMENT_TYPE
+  * Voice NLU Prediction : cardiology consultation   (Top-1 Conf: 0.2941, Entropy: 1.942)
+    Top-3 Distribution   : cardiology consultation: 0.294, cardiac imaging report: 0.218, medication reconciliation: 0.137
+  * Text NLU Prediction  : cardiac imaging report    (Top-1 Conf: 0.6644, Entropy: 1.202)
+    Top-3 Distribution   : cardiac imaging report: 0.664, cardiology consultation: 0.123, medication reconciliation: 0.083
+  * Cross-modal Divergence: JS Divergence = 0.2181
+
+======================================================================
+DETECTOR B EVALUATION
+======================================================================
+Detector B Output Probability : 1.0000
+Operational Decision Threshold: 0.0500
+[!] VERDICT: ERROR / SUSPICIOUS (Cross-modal divergence exceeds threshold)
+
+======================================================================
+GEMMA REASONING & USER INTENT DIAGNOSIS
+======================================================================
+
+======================================================================
