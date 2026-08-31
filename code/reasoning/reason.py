@@ -41,8 +41,8 @@ AUDIO_DIR = PROJECT_ROOT / "audio"
 RESULTS_DIR = PROJECT_ROOT / "runtime_results"
 
 WHISPER_PATH = "/home/spark2/Models/base.en.pt"
-MINILM_PATH = MODELS_DIR / "all-MiniLM-L6-v2"
-GEMMA_PATH = "/home/spark2/Models/gemma-3-1b-it" 
+MINILM_PATH = "/home/spark2/Models/all-MiniLM-L6-v2"
+GEMMA_PATH = "/home/spark2/Models/gemma_2_models/gemma-3-1b-it" 
 DATASET_CSV = DATASET_DIR / "nlu_robust_6000_scenario_paraphrase_FINAL_70_10_20.csv"
 WHISPER_EMBEDDINGS_NPY = EMBEDDINGS_DIR / "whisper_embeddings_FINAL_70_10_20.npy"
 WHISPER_EMBEDDINGS_META = EMBEDDINGS_DIR / "whisper_embedding_metadata_FINAL_70_10_20.csv"
@@ -152,7 +152,7 @@ def extract_detector_features(voice_preds, text_preds, voice_probs, text_probs, 
         w_dis += HEAD_WEIGHTS[h] * dis
         
         v_p, t_p = voice_probs[h], text_probs[h]
-        v_cls, t_cls = encoders[f"{h}_label"].classes_, encoders[f"{h}_label"].classes_
+        v_cls, t_cls = encoders[f"{h}_label"].classes_[:len(v_p)], encoders[f"{h}_label"].classes_[:len(t_p)]
         
         v_top1, t_top1 = float(np.max(v_p)), float(np.max(t_p))
         v_confs.append(v_top1); t_confs.append(t_top1)
@@ -287,13 +287,14 @@ def run_pipeline():
         for h in HEADS:
             probs = v_mlps[h].predict_proba(v_128)[0]
             v_probs[h] = probs
-            v_preds[h] = shared_encoders[f"{h}_label"].inverse_transform([np.argmax(probs)])[0]
+            pred_class_int=v_mlps[h].classes_[np.argmax(probs)]
+            v_preds[h] = shared_encoders[f"{h}_label"].inverse_transform([pred_class_int])[0]
         if DEVICE == "cuda": torch.cuda.synchronize()
         timers['voice_nlu_ms'] = (time.perf_counter() - t0) * 1000
         
         # Whisper Decoder
         t0 = time.perf_counter()
-        decode_options = whisper.DecodingOptions(fp16=(DEVICE == "cuda"), temperature=0.0)
+        decode_options = whisper.DecodingOptions(fp16=(DEVICE == "cuda"), temperature=0.0, language='en')
         with torch.no_grad():
             dec_res = whisper.decode(whisper_model, mel, decode_options)
             decoded_transcript = dec_res.text.strip()
@@ -315,7 +316,8 @@ def run_pipeline():
         for h in HEADS:
             probs = t_mlps[h].predict_proba(clean_128)[0]
             text_clean_probs[h] = probs
-            text_clean_preds[h] = shared_encoders[f"{h}_label"].inverse_transform([np.argmax(probs)])[0]
+            pred_class_int=t_mlps[h].classes_[np.argmax(probs)]
+            text_clean_preds[h] = shared_encoders[f"{h}_label"].inverse_transform(pred_class_int)[0]
 
         # Text NLU Path
         t0 = time.perf_counter()
@@ -328,7 +330,8 @@ def run_pipeline():
         for h in HEADS:
             probs = t_mlps[h].predict_proba(t_128)[0]
             t_probs[h] = probs
-            t_preds[h] = shared_encoders[f"{h}_label"].inverse_transform([np.argmax(probs)])[0]
+            pred_class_int=t_mlps[h].classes_[np.argmax(probs)]
+            t_preds[h] = shared_encoders[f"{h}_label"].inverse_transform(pred_class_int)[0]
         if DEVICE == "cuda": torch.cuda.synchronize()
         timers['text_nlu_ms'] = (time.perf_counter() - t0) * 1000
         
