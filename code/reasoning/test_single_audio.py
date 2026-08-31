@@ -144,17 +144,14 @@ def get_nlu_preds(emb_128, mlps, shared_encoders):
 # 4. LOAD DETECTOR ARTIFACTS
 # ==============================================================================
 def load_detector():
-    """Finds and loads the requested real_whisper_detector_B artifacts."""
+    """Finds and loads the specific real_whisper_detector_B artifacts."""
     search_paths = [
-        (EXP_MODELS_DIR / "real_whisper_detector_B.joblib",
-         EXP_MODELS_DIR / "real_whisper_detector_B_features.json",
-         EXP_MODELS_DIR / "real_whisper_detector_B_threshold.json"),
         (DETECTOR_DIR / "real_whisper_detector_B.joblib",
          DETECTOR_DIR / "real_whisper_detector_B_features.json",
          DETECTOR_DIR / "real_whisper_detector_B_threshold.json"),
-        (DETECTOR_DIR / "Detector_B_STRICT_ASR_INDUCED.joblib",
-         None,
-         DETECTOR_DIR / "strict_detector_thresholds.json")
+        (EXP_MODELS_DIR / "real_whisper_detector_B.joblib",
+         EXP_MODELS_DIR / "real_whisper_detector_B_features.json",
+         EXP_MODELS_DIR / "real_whisper_detector_B_threshold.json")
     ]
     
     detector_model, feature_names, threshold = None, None, 0.50
@@ -177,7 +174,7 @@ def load_detector():
             break
 
     if detector_model is None:
-        raise FileNotFoundError("Could not find a valid detector .joblib file.")
+        raise FileNotFoundError("Could not find real_whisper_detector_B artifacts in the specified directories.")
         
     return detector_model, feature_names, threshold
 
@@ -234,7 +231,7 @@ def run_single_audio_diagnostic():
         v_128 = v_proj(torch.tensor(v_scaled, dtype=torch.float32, device=DEVICE)).cpu().numpy()
     v_preds, v_probs = get_nlu_preds(v_128, v_mlps, shared_encoders)
 
-    # 3. Whisper Decoder (Language explicitly set to English)
+    # 3. Whisper Decoder
     decode_options = whisper.DecodingOptions(fp16=(DEVICE == "cuda"), temperature=0.0, language="en")
     with torch.no_grad():
         dec_res = whisper.decode(whisper_model, mel, decode_options)
@@ -251,11 +248,9 @@ def run_single_audio_diagnostic():
     feat_a, feat_b = extract_detector_features(v_preds, t_preds, v_probs, t_probs, v_mlps, t_mlps, shared_encoders)
     
     if feature_schema is not None:
-        # Reorder columns to exactly match training order
         df_feat = pd.DataFrame([feat_b])
         missing = [f for f in feature_schema if f not in df_feat.columns]
         if missing:
-            print(f"[!] Warning: Missing features for schema: {missing}")
             for m in missing: df_feat[m] = 0.0
         detector_input = df_feat[feature_schema].values
     else:
@@ -308,36 +303,47 @@ def run_single_audio_diagnostic():
     print("="*70)
     
     if is_suspicious:
-        prompt = f"""You are an expert AI assistant analyzing a spoken audio transcript that has been flagged as potentially containing an ASR (speech recognition) error.
+        prompt = f"""You are an expert AI assistant analyzing a spoken audio transcript. The speech recognition error detector has flagged this transcript as potentially corrupted.
 
-Decoded Transcript:
+[Raw Decoded Transcript]
 "{decoded_transcript}"
 
-Independent Acoustic Evidence (extracted directly from speech audio):
-- Domain: {v_preds['domain']} (Confidence: {np.max(v_probs['domain']):.2f})
-- Subdomain: {v_preds['subdomain']} (Confidence: {np.max(v_probs['subdomain']):.2f})
-- Topic: {v_preds['topic']} (Confidence: {np.max(v_probs['topic']):.2f})
-- Document Type: {v_preds['document_type']} (Confidence: {np.max(v_probs['document_type']):.2f})
+[Text-Based NLU Posteriors (Derived from flawed text)]
+- Domain Prediction: {t_preds['domain']} (Probability: {np.max(t_probs['domain']):.2f})
+- Topic Prediction: {t_preds['topic']} (Probability: {np.max(t_probs['topic']):.2f})
 
-Please answer the following three points concisely:
-1. What does the raw transcript literally say?
-2. What acoustic/semantic discrepancy was detected, and what was the user's likely intended request?
-3. Provide the corrected response addressing the user's true intent."""
+[Acoustic-Based Voice NLU Posteriors (Derived directly from sound)]
+- Domain Prediction: {v_preds['domain']} (Probability: {np.max(v_probs['domain']):.2f})
+- Topic Prediction: {v_preds['topic']} (Probability: {np.max(v_probs['topic']):.2f})
+
+Because the Text-NLU and Voice-NLU clash, you must trust the Acoustic Voice NLU as the true source of intent.
+
+Please provide a concise answer covering these three points:
+1. Understanding: What does the raw transcript literally appear to say?
+2. Discrepancy Analysis: Given the strong Acoustic Voice NLU signals, what domain terminology did the speech recognizer likely mishear?
+3. Correction: What is the corrected intended request, and how do you respond to it?"""
+
     else:
-        prompt = f"""You are an expert AI assistant analyzing a user's spoken request.
+        prompt = f"""You are an expert AI assistant. Please fulfill the user's spoken request.
 
-Decoded Transcript:
+[Decoded Transcript]
 "{decoded_transcript}"
 
-Acoustic Verification Status: Verified reliable by speech semantic model.
+Acoustic Verification Status: Verified reliable by multimodal speech semantic models.
 
-Please provide a concise, direct response addressing the user's statement or question."""
+Please provide a concise, direct response addressing the user's statement."""
 
-    inputs = gemma_tokenizer(prompt, return_tensors="pt").to(DEVICE)
+    # Format using Gemma's Chat Template to ensure a proper generative response
+    messages = [
+        {"role": "user", "content": prompt}
+    ]
+    prompt_formatted = gemma_tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+
+    inputs = gemma_tokenizer(prompt_formatted, return_tensors="pt").to(DEVICE)
     with torch.no_grad():
         outputs = gemma_model.generate(
             **inputs, 
-            max_new_tokens=150, 
+            max_new_tokens=250, 
             do_sample=False, 
             temperature=None
         )
