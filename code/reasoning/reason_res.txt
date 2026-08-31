@@ -1,0 +1,18 @@
+
+Calculating Final Metrics...
+
+==================================================
+FINAL RESEARCH SUMMARY (UNSEEN SPLIT)
+==================================================
+A. Voice-NLU Unseen Topic F1: 0.339
+B. Text-NLU Unseen Topic F1:  0.431
+C. ASR Unseen Mean WER:       30.879 | CER: 219.050
+D. Strict ASR-Induced Error Rate: 0.0%
+E. Detector A Unseen ROC-AUC: nan | F1: 0.000
+F. Detector B Unseen ROC-AUC: nan | F1: 0.000
+J. Baseline End-to-End Latency (Mean):       222.8 ms
+   Detector-Gated End-to-End Latency (Mean): 205.9 ms
+   Voice-Grounded End-to-End Latency (Mean): 222.9 ms
+K. P95 Detector-Gated Latency:               257.8 ms
+L. Peak GPU Memory Reserved:                 2.38 GB
+==================================================
